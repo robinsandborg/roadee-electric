@@ -26,20 +26,16 @@ export default function LandingActions({
   const isBusy = isSessionPending || pendingProvider !== null;
 
   return (
-    <section className="landing-panel rounded-[1.75rem] p-6 sm:p-7">
-      <p className="landing-kicker">Get Started</p>
-      <h2 className="mt-2 text-2xl font-bold text-[var(--sea-ink)]">Pick your entry path.</h2>
+    <section className="landing-panel rounded-[1.9rem] p-6 sm:p-7">
+      <p className="landing-kicker">Start Here</p>
+      <h2 className="mt-2 text-2xl font-black text-[var(--sea-ink)] sm:text-[2rem]">
+        Launch your community space.
+      </h2>
+      <p className="m-0 mt-2 text-sm text-[var(--landing-copy-muted)]">
+        Create a public room for requests, conversations, and roadmap updates.
+      </p>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          className="landing-cta-secondary"
-          onClick={() => setIntent("sign-in")}
-          disabled={isBusy}
-        >
-          Sign in
-        </button>
-
+      <div className="mt-5 grid gap-3">
         <button
           type="button"
           className="landing-cta-primary"
@@ -53,6 +49,15 @@ export default function LandingActions({
           disabled={isBusy}
         >
           Create a space
+        </button>
+
+        <button
+          type="button"
+          className="landing-cta-secondary"
+          onClick={() => setIntent("sign-in")}
+          disabled={isBusy}
+        >
+          Sign in
         </button>
       </div>
 
@@ -83,6 +88,11 @@ export default function LandingActions({
           </div>
         </div>
       ) : null}
+
+      <div className="mt-5 grid gap-2 text-sm text-[var(--landing-copy-muted)]">
+        <p className="m-0">No setup wizard. Just name your space and invite your users.</p>
+        <p className="m-0">Works great for product teams, open betas, and private pilots.</p>
+      </div>
 
       {authError ? (
         <p role="alert" className="landing-inline-error mt-4 mb-0 text-sm">

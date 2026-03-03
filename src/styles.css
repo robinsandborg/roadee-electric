@@ -86,7 +86,18 @@ body {
   color: var(--copy-base);
   font-family: var(--font-sans);
   background-color: var(--bg-base);
-  background: var(--bg-base);
+  background:
+    radial-gradient(
+      1200px 650px at 8% -20%,
+      color-mix(in srgb, var(--action-primary) 15%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 100% -10%,
+      color-mix(in srgb, var(--chip-bg) 60%, transparent),
+      transparent 62%
+    ),
+    var(--bg-base);
   overflow-x: hidden;
   position: relative;
   -webkit-font-smoothing: antialiased;
@@ -141,10 +152,27 @@ pre code {
   margin-inline: auto;
 }
 
+.landing-main-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .landing-main-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: start;
+  }
+}
+
 .landing-hero {
   background:
+    radial-gradient(
+      120% 120% at 0% 0%,
+      color-mix(in srgb, var(--action-primary) 28%, white),
+      transparent 48%
+    ),
     linear-gradient(160deg, var(--landing-panel-bg), transparent 55%),
-    linear-gradient(110deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+    linear-gradient(110deg, rgba(255, 255, 255, 0.33), rgba(255, 255, 255, 0));
   border: 1px solid var(--chip-line);
   box-shadow: var(--island-shadow);
 }
@@ -164,7 +192,7 @@ pre code {
   left: -9rem;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--action-primary) 60%, transparent),
+    color-mix(in srgb, var(--action-primary) 55%, transparent),
     transparent 66%
   );
 }
@@ -183,6 +211,30 @@ pre code {
   background: var(--landing-panel-bg);
   border: 1px solid var(--chip-line);
   box-shadow: var(--island-shadow);
+}
+
+.landing-story-strip {
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--landing-panel-bg) 88%, transparent),
+    color-mix(in srgb, var(--landing-panel-bg) 98%, transparent)
+  );
+  border: 1px solid var(--chip-line);
+  box-shadow: var(--island-shadow);
+}
+
+.landing-float-chip {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  padding: 0.38rem 0.66rem;
+  background: color-mix(in srgb, var(--chip-bg) 88%, white);
+  color: var(--sea-ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .landing-kicker {
@@ -207,7 +259,7 @@ pre code {
 
 .landing-proof-card {
   border: 1px solid var(--chip-line);
-  background: var(--landing-card-bg);
+  background: color-mix(in srgb, var(--landing-card-bg) 94%, transparent);
 }
 
 .landing-cta-primary,
@@ -223,13 +275,15 @@ pre code {
     transform 140ms ease,
     background-color 140ms ease,
     border-color 140ms ease,
-    opacity 140ms ease;
+    opacity 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .landing-cta-primary {
   background: var(--landing-cta-bg);
   border-color: color-mix(in srgb, var(--action-primary) 35%, var(--chip-line));
   color: var(--sea-ink);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--action-primary) 24%, transparent);
 }
 
 .landing-cta-secondary {
@@ -239,14 +293,16 @@ pre code {
 }
 
 .landing-provider-btn {
-  background: color-mix(in srgb, var(--chip-bg) 82%, transparent);
+  background: color-mix(in srgb, var(--chip-bg) 90%, white);
   border-color: var(--chip-line);
   color: var(--sea-ink);
+  font-size: 0.84rem;
+  padding: 0.62rem 0.95rem;
 }
 
 .landing-auth-card {
   border: 1px solid var(--chip-line);
-  background: color-mix(in srgb, var(--landing-card-bg) 90%, transparent);
+  background: color-mix(in srgb, var(--landing-card-bg) 92%, transparent);
 }
 
 .landing-label {
@@ -274,6 +330,24 @@ pre code {
 .landing-inline-error {
   color: color-mix(in srgb, var(--action-primary) 72%, var(--sea-ink));
   font-weight: 600;
+}
+
+.landing-chip-btn {
+  border-radius: 999px;
+  border: 1px solid var(--chip-line);
+  background: color-mix(in srgb, var(--chip-bg) 86%, white);
+  color: var(--sea-ink-soft);
+  padding: 0.32rem 0.62rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease;
+}
+
+.landing-chip-btn:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--chip-bg) 76%, white);
 }
 
 .landing-cta-primary:hover,
