@@ -6,4 +6,8 @@ export const appRoutes = {
     to: "/s/$spaceSlug" as const,
     params: { spaceSlug },
   }),
+  membersSettingsBySlug: (spaceSlug: string) => ({
+    to: "/s/$spaceSlug/settings/members" as const,
+    params: { spaceSlug },
+  }),
 };

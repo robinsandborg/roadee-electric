@@ -31,6 +31,7 @@ Ship V1 flows so authenticated users can create spaces, join by slug link, and p
 - [ ] Record local setup command sequence in this file (or `README.md`) so V1 is reproducible.
 
 Definition of done:
+
 - Sign-in chooser still works from landing page.
 - Team can boot app with a documented env var set.
 
@@ -49,6 +50,7 @@ Definition of done:
 - [ ] Add rollback SQL in the same migration set (or paired down migration).
 
 Definition of done:
+
 - Migration applies cleanly on empty DB.
 - Re-running migration is idempotent via migration tooling.
 
@@ -60,6 +62,7 @@ Definition of done:
 - [ ] Keep collection naming aligned with planned V2/V3/V4 entities for incremental expansion.
 
 Definition of done:
+
 - App compiles with typed `spacesCollection` and `membershipsCollection` exports.
 - No V1 routes depend on demo message collection types.
 
@@ -74,6 +77,7 @@ Definition of done:
 - [ ] Document server-side trust boundary: only promotion stays behind trusted mutation path.
 
 Definition of done:
+
 - Two authenticated clients for the same space receive space/membership changes without refresh.
 
 ### Task 4: `/spaces/new` create-space flow
@@ -88,6 +92,7 @@ Definition of done:
 - [ ] Ensure unauthenticated users are redirected to sign-in flow.
 
 Definition of done:
+
 - Creating a space inserts both `spaces` and owner `memberships` records.
 - New space becomes visible on second signed-in client via replication.
 
@@ -102,6 +107,7 @@ Definition of done:
 - [ ] Surface membership status in UI (joined vs already member).
 
 Definition of done:
+
 - Visiting same space route repeatedly does not create duplicate memberships.
 - First join immediately appears in member list and replicated clients.
 
@@ -116,6 +122,7 @@ Definition of done:
 - [ ] Hide/disable promotion controls for non-staff users in UI.
 
 Definition of done:
+
 - Staff and owner can promote colleagues.
 - Non-staff direct calls return authorization error and no role change.
 
@@ -134,6 +141,7 @@ Definition of done:
 - [ ] Run browser verification for create/join/promote flows with two users.
 
 Definition of done:
+
 - All checks pass.
 - Manual browser verification confirms end-to-end behavior.
 

@@ -13,7 +13,14 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpacesNewRouteImport } from './routes/spaces/new'
 import { Route as SSpaceSlugRouteImport } from './routes/s/$spaceSlug'
+import { Route as ApiV1SpacesRouteImport } from './routes/api/v1/spaces'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as SSpaceSlugSettingsMembersRouteImport } from './routes/s/$spaceSlug/settings/members'
+import { Route as ApiV1SpacesPromoteRouteImport } from './routes/api/v1/spaces/promote'
+import { Route as ApiV1SpacesJoinRouteImport } from './routes/api/v1/spaces/join'
+import { Route as ApiElectricShapesSpacesRouteImport } from './routes/api/electric/shapes/spaces'
+import { Route as ApiElectricShapesMembershipsRouteImport } from './routes/api/electric/shapes/memberships'
+import { Route as ApiV1SpacesSpaceSlugMembersRouteImport } from './routes/api/v1/spaces/$spaceSlug/members'
 
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
@@ -35,39 +42,122 @@ const SSpaceSlugRoute = SSpaceSlugRouteImport.update({
   path: '/s/$spaceSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1SpacesRoute = ApiV1SpacesRouteImport.update({
+  id: '/api/v1/spaces',
+  path: '/api/v1/spaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SSpaceSlugSettingsMembersRoute =
+  SSpaceSlugSettingsMembersRouteImport.update({
+    id: '/settings/members',
+    path: '/settings/members',
+    getParentRoute: () => SSpaceSlugRoute,
+  } as any)
+const ApiV1SpacesPromoteRoute = ApiV1SpacesPromoteRouteImport.update({
+  id: '/promote',
+  path: '/promote',
+  getParentRoute: () => ApiV1SpacesRoute,
+} as any)
+const ApiV1SpacesJoinRoute = ApiV1SpacesJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => ApiV1SpacesRoute,
+} as any)
+const ApiElectricShapesSpacesRoute = ApiElectricShapesSpacesRouteImport.update({
+  id: '/api/electric/shapes/spaces',
+  path: '/api/electric/shapes/spaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectricShapesMembershipsRoute =
+  ApiElectricShapesMembershipsRouteImport.update({
+    id: '/api/electric/shapes/memberships',
+    path: '/api/electric/shapes/memberships',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SpacesSpaceSlugMembersRoute =
+  ApiV1SpacesSpaceSlugMembersRouteImport.update({
+    id: '/$spaceSlug/members',
+    path: '/$spaceSlug/members',
+    getParentRoute: () => ApiV1SpacesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/s/$spaceSlug': typeof SSpaceSlugRoute
+  '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
+  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
+  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
+  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/s/$spaceSlug': typeof SSpaceSlugRoute
+  '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
+  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
+  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
+  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/s/$spaceSlug': typeof SSpaceSlugRoute
+  '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
+  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
+  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
+  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/s/$spaceSlug' | '/spaces/new' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/s/$spaceSlug'
+    | '/spaces/new'
+    | '/api/auth/$'
+    | '/api/v1/spaces'
+    | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/spaces'
+    | '/api/v1/spaces/join'
+    | '/api/v1/spaces/promote'
+    | '/s/$spaceSlug/settings/members'
+    | '/api/v1/spaces/$spaceSlug/members'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/s/$spaceSlug' | '/spaces/new' | '/api/auth/$'
+  to:
+    | '/'
+    | '/about'
+    | '/s/$spaceSlug'
+    | '/spaces/new'
+    | '/api/auth/$'
+    | '/api/v1/spaces'
+    | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/spaces'
+    | '/api/v1/spaces/join'
+    | '/api/v1/spaces/promote'
+    | '/s/$spaceSlug/settings/members'
+    | '/api/v1/spaces/$spaceSlug/members'
   id:
     | '__root__'
     | '/'
@@ -75,14 +165,24 @@ export interface FileRouteTypes {
     | '/s/$spaceSlug'
     | '/spaces/new'
     | '/api/auth/$'
+    | '/api/v1/spaces'
+    | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/spaces'
+    | '/api/v1/spaces/join'
+    | '/api/v1/spaces/promote'
+    | '/s/$spaceSlug/settings/members'
+    | '/api/v1/spaces/$spaceSlug/members'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  SSpaceSlugRoute: typeof SSpaceSlugRoute
+  SSpaceSlugRoute: typeof SSpaceSlugRouteWithChildren
   SpacesNewRoute: typeof SpacesNewRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiV1SpacesRoute: typeof ApiV1SpacesRouteWithChildren
+  ApiElectricShapesMembershipsRoute: typeof ApiElectricShapesMembershipsRoute
+  ApiElectricShapesSpacesRoute: typeof ApiElectricShapesSpacesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -115,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SSpaceSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/spaces': {
+      id: '/api/v1/spaces'
+      path: '/api/v1/spaces'
+      fullPath: '/api/v1/spaces'
+      preLoaderRoute: typeof ApiV1SpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -122,15 +229,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/s/$spaceSlug/settings/members': {
+      id: '/s/$spaceSlug/settings/members'
+      path: '/settings/members'
+      fullPath: '/s/$spaceSlug/settings/members'
+      preLoaderRoute: typeof SSpaceSlugSettingsMembersRouteImport
+      parentRoute: typeof SSpaceSlugRoute
+    }
+    '/api/v1/spaces/promote': {
+      id: '/api/v1/spaces/promote'
+      path: '/promote'
+      fullPath: '/api/v1/spaces/promote'
+      preLoaderRoute: typeof ApiV1SpacesPromoteRouteImport
+      parentRoute: typeof ApiV1SpacesRoute
+    }
+    '/api/v1/spaces/join': {
+      id: '/api/v1/spaces/join'
+      path: '/join'
+      fullPath: '/api/v1/spaces/join'
+      preLoaderRoute: typeof ApiV1SpacesJoinRouteImport
+      parentRoute: typeof ApiV1SpacesRoute
+    }
+    '/api/electric/shapes/spaces': {
+      id: '/api/electric/shapes/spaces'
+      path: '/api/electric/shapes/spaces'
+      fullPath: '/api/electric/shapes/spaces'
+      preLoaderRoute: typeof ApiElectricShapesSpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric/shapes/memberships': {
+      id: '/api/electric/shapes/memberships'
+      path: '/api/electric/shapes/memberships'
+      fullPath: '/api/electric/shapes/memberships'
+      preLoaderRoute: typeof ApiElectricShapesMembershipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/spaces/$spaceSlug/members': {
+      id: '/api/v1/spaces/$spaceSlug/members'
+      path: '/$spaceSlug/members'
+      fullPath: '/api/v1/spaces/$spaceSlug/members'
+      preLoaderRoute: typeof ApiV1SpacesSpaceSlugMembersRouteImport
+      parentRoute: typeof ApiV1SpacesRoute
+    }
   }
 }
+
+interface SSpaceSlugRouteChildren {
+  SSpaceSlugSettingsMembersRoute: typeof SSpaceSlugSettingsMembersRoute
+}
+
+const SSpaceSlugRouteChildren: SSpaceSlugRouteChildren = {
+  SSpaceSlugSettingsMembersRoute: SSpaceSlugSettingsMembersRoute,
+}
+
+const SSpaceSlugRouteWithChildren = SSpaceSlugRoute._addFileChildren(
+  SSpaceSlugRouteChildren,
+)
+
+interface ApiV1SpacesRouteChildren {
+  ApiV1SpacesJoinRoute: typeof ApiV1SpacesJoinRoute
+  ApiV1SpacesPromoteRoute: typeof ApiV1SpacesPromoteRoute
+  ApiV1SpacesSpaceSlugMembersRoute: typeof ApiV1SpacesSpaceSlugMembersRoute
+}
+
+const ApiV1SpacesRouteChildren: ApiV1SpacesRouteChildren = {
+  ApiV1SpacesJoinRoute: ApiV1SpacesJoinRoute,
+  ApiV1SpacesPromoteRoute: ApiV1SpacesPromoteRoute,
+  ApiV1SpacesSpaceSlugMembersRoute: ApiV1SpacesSpaceSlugMembersRoute,
+}
+
+const ApiV1SpacesRouteWithChildren = ApiV1SpacesRoute._addFileChildren(
+  ApiV1SpacesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  SSpaceSlugRoute: SSpaceSlugRoute,
+  SSpaceSlugRoute: SSpaceSlugRouteWithChildren,
   SpacesNewRoute: SpacesNewRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiV1SpacesRoute: ApiV1SpacesRouteWithChildren,
+  ApiElectricShapesMembershipsRoute: ApiElectricShapesMembershipsRoute,
+  ApiElectricShapesSpacesRoute: ApiElectricShapesSpacesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
