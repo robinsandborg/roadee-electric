@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireSessionUser } from "#/lib/v1/auth-session.server";
-import { joinSpaceBySlugInDb } from "#/lib/v1/repository.server";
-import { V1ServiceError } from "#/lib/v1/service";
+import { requireSessionUser } from "#/lib/spaces/auth-session.server";
+import { joinSpaceBySlugInDb } from "#/lib/spaces/repository.server";
+import { SpacesServiceError } from "#/lib/spaces/service";
 
-export const Route = createFileRoute("/api/v1/spaces/join")({
+export const Route = createFileRoute("/api/spaces/join")({
   server: {
     handlers: {
       POST: async ({ request }) => {
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/v1/spaces/join")({
 });
 
 function mapRouteError(error: unknown): Response {
-  if (error instanceof V1ServiceError) {
+  if (error instanceof SpacesServiceError) {
     if (error.code === "space_not_found") {
       return errorResponse(404, error.code, error.message);
     }

@@ -9,7 +9,7 @@ pnpm install
 pnpm dev
 ```
 
-## V1 Local Setup
+## Local Setup
 
 1. Copy/create `.env.local`.
 2. Set auth providers:
@@ -19,7 +19,7 @@ pnpm dev
    - `GOOGLE_CLIENT_SECRET`
    - `GITHUB_CLIENT_ID`
    - `GITHUB_CLIENT_SECRET`
-3. Optional but recommended for V1 data backend:
+3. Optional but recommended for Postgres + Electric data backend:
    - `DATABASE_URL` (Postgres/Neon)
    - `ELECTRIC_URL` (ElectricSQL service base URL, for example `https://api.electric-sql.cloud`)
    - `ELECTRIC_SOURCE_ID` (Electric source id)
@@ -27,6 +27,28 @@ pnpm dev
    - `VITE_ELECTRIC_SHAPE_PROXY_URL` (shape proxy URL used by frontend clients, use `/api/electric/shapes`)
 4. Apply SQL migration(s):
    - `db/migrations/001_v1_spaces_memberships.sql`
+
+## Posts Setup Additions
+
+1. Keep auth persisted in Postgres:
+   - `DATABASE_URL` must be set before starting the app.
+   - run Better Auth DB migrations:
+     - `pnpm dlx @better-auth/cli migrate`
+2. Auth table ownership:
+   - this app persists Better Auth tables (`user`, `session`, `account`, etc.) in the same app database.
+   - ignore `neon_auth.*` tables unless you intentionally switch to Neon Auth-managed auth.
+3. Posts env vars:
+   - `UPLOADTHING_TOKEN` (required for `/api/uploads/image` UploadThing server upload path)
+   - `BETTER_AUTH_URL` (must match your app URL for OAuth callback correctness)
+4. Apply posts SQL migration(s):
+   - `db/migrations/002_v2_posts_threads.sql`
+5. Electric shape proxy routes used by local-first sync:
+   - `/api/electric/shapes/posts`
+   - `/api/electric/shapes/comments`
+   - `/api/electric/shapes/post-upvotes`
+   - `/api/electric/shapes/categories`
+   - `/api/electric/shapes/tags`
+   - `/api/electric/shapes/post-tags`
 
 # Building For Production
 

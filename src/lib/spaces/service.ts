@@ -4,10 +4,10 @@ import type {
   MembershipRecord,
   MembershipRole,
   SpaceRecord,
-  V1State,
-} from "#/lib/v1/types";
+  SpacesState,
+} from "#/lib/spaces/types";
 
-export class V1ServiceError extends Error {
+export class SpacesServiceError extends Error {
   code:
     | "slug_conflict"
     | "invalid_slug"
@@ -27,7 +27,7 @@ export class V1ServiceError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "V1ServiceError";
+    this.name = "SpacesServiceError";
     this.code = code;
   }
 }
@@ -58,7 +58,7 @@ type PromoteMemberInput = {
 };
 
 export function createSpace(
-  state: V1State,
+  state: SpacesState,
   input: CreateSpaceInput,
 ): {
   space: SpaceRecord;
@@ -66,7 +66,7 @@ export function createSpace(
 } {
   const slug = normalizeSpaceSlug(input.slug);
   if (!isValidSpaceSlug(slug)) {
-    throw new V1ServiceError(
+    throw new SpacesServiceError(
       "invalid_slug",
       "Slug must be lowercase letters, numbers, and dashes.",
     );
@@ -74,7 +74,7 @@ export function createSpace(
 
   const existingSpace = state.spaces.find((space) => space.slug === slug);
   if (existingSpace) {
-    throw new V1ServiceError("slug_conflict", "A space with this slug already exists.");
+    throw new SpacesServiceError("slug_conflict", "A space with this slug already exists.");
   }
 
   const now = input.now ?? new Date().toISOString();
@@ -106,7 +106,7 @@ export function createSpace(
 }
 
 export function joinSpaceBySlug(
-  state: V1State,
+  state: SpacesState,
   input: JoinSpaceBySlugInput,
 ): {
   space: SpaceRecord;
@@ -116,7 +116,7 @@ export function joinSpaceBySlug(
   const slug = normalizeSpaceSlug(input.spaceSlug);
   const space = state.spaces.find((candidate) => candidate.slug === slug);
   if (!space) {
-    throw new V1ServiceError("space_not_found", "Space not found.");
+    throw new SpacesServiceError("space_not_found", "Space not found.");
   }
 
   const existingMembership = state.memberships.find(
@@ -152,7 +152,7 @@ export function joinSpaceBySlug(
 }
 
 export function promoteMemberToStaff(
-  state: V1State,
+  state: SpacesState,
   input: PromoteMemberInput,
 ): {
   space: SpaceRecord;
@@ -162,21 +162,21 @@ export function promoteMemberToStaff(
   const slug = normalizeSpaceSlug(input.spaceSlug);
   const space = state.spaces.find((candidate) => candidate.slug === slug);
   if (!space) {
-    throw new V1ServiceError("space_not_found", "Space not found.");
+    throw new SpacesServiceError("space_not_found", "Space not found.");
   }
 
   const actorMembership = findMembership(state, space.id, input.actorUserId);
   if (!actorMembership) {
-    throw new V1ServiceError("membership_required", "You must be a member of this space.");
+    throw new SpacesServiceError("membership_required", "You must be a member of this space.");
   }
 
   if (!isStaffRole(actorMembership.role)) {
-    throw new V1ServiceError("forbidden", "Only owner or staff can promote members.");
+    throw new SpacesServiceError("forbidden", "Only owner or staff can promote members.");
   }
 
   const targetMembership = findMembership(state, space.id, input.targetUserId);
   if (!targetMembership) {
-    throw new V1ServiceError("target_not_found", "Target member not found.");
+    throw new SpacesServiceError("target_not_found", "Target member not found.");
   }
 
   if (targetMembership.role !== "owner") {
@@ -195,7 +195,7 @@ export function promoteMemberToStaff(
   };
 }
 
-export function listVisibleStateForUser(state: V1State, userId: string): V1State {
+export function listVisibleStateForUser(state: SpacesState, userId: string): SpacesState {
   const memberships = state.memberships.filter((membership) => membership.userId === userId);
   const allowedSpaceIds = new Set(memberships.map((membership) => membership.spaceId));
   const spaces = state.spaces.filter((space) => allowedSpaceIds.has(space.id));
@@ -210,7 +210,7 @@ export function listVisibleStateForUser(state: V1State, userId: string): V1State
 }
 
 export function listMembersBySlug(
-  state: V1State,
+  state: SpacesState,
   spaceSlug: string,
 ): {
   space: SpaceRecord;
@@ -219,7 +219,7 @@ export function listMembersBySlug(
   const slug = normalizeSpaceSlug(spaceSlug);
   const space = state.spaces.find((candidate) => candidate.slug === slug);
   if (!space) {
-    throw new V1ServiceError("space_not_found", "Space not found.");
+    throw new SpacesServiceError("space_not_found", "Space not found.");
   }
 
   return {
@@ -229,7 +229,7 @@ export function listMembersBySlug(
 }
 
 export function getRoleForUserInSpace(
-  state: V1State,
+  state: SpacesState,
   spaceId: string,
   userId: string,
 ): MembershipRole | null {
@@ -238,7 +238,7 @@ export function getRoleForUserInSpace(
 }
 
 function findMembership(
-  state: V1State,
+  state: SpacesState,
   spaceId: string,
   userId: string,
 ): MembershipRecord | undefined {

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
-  V1ServiceError,
+  SpacesServiceError,
   createSpace,
   joinSpaceBySlug,
   promoteMemberToStaff,
-} from "#/lib/v1/service";
-import type { V1State } from "#/lib/v1/types";
+} from "#/lib/spaces/service";
+import type { SpacesState } from "#/lib/spaces/types";
 
-function makeState(): V1State {
+function makeState(): SpacesState {
   return {
     spaces: [],
     memberships: [],
@@ -36,7 +36,7 @@ describe("createSpace", () => {
         description: "Duplicate space",
         createdBy: "user-2",
       }),
-    ).toThrowError(V1ServiceError);
+    ).toThrowError(SpacesServiceError);
 
     try {
       createSpace(state, {
@@ -48,8 +48,8 @@ describe("createSpace", () => {
         createdBy: "user-3",
       });
     } catch (error) {
-      expect(error).toBeInstanceOf(V1ServiceError);
-      expect((error as V1ServiceError).code).toBe("slug_conflict");
+      expect(error).toBeInstanceOf(SpacesServiceError);
+      expect((error as SpacesServiceError).code).toBe("slug_conflict");
     }
   });
 });
@@ -122,7 +122,7 @@ describe("promoteMemberToStaff", () => {
         actorUserId: "user-1",
         targetUserId: "user-2",
       }),
-    ).toThrowError(V1ServiceError);
+    ).toThrowError(SpacesServiceError);
 
     try {
       promoteMemberToStaff(state, {
@@ -131,7 +131,7 @@ describe("promoteMemberToStaff", () => {
         targetUserId: "user-2",
       });
     } catch (error) {
-      expect((error as V1ServiceError).code).toBe("forbidden");
+      expect((error as SpacesServiceError).code).toBe("forbidden");
     }
   });
 });

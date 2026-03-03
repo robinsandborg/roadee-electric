@@ -1,16 +1,29 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { and, eq, useLiveQuery } from "@tanstack/react-db";
-import { useEffect, useState } from "react";
-import { appRoutes } from "#/lib/routes";
-import { authClient } from "#/lib/auth-client";
-import { joinSpaceBySlugRequest, V1ApiError } from "#/lib/v1/api-client";
-import { useV1SpacesSync } from "#/hooks/use-v1-sync";
+import { useEffect, useMemo, useState } from "react";
+import PostCard from "#/components/posts/PostCard";
 import {
+  categoriesCollection,
+  commentsCollection,
   membershipsCollection,
+  postTagsCollection,
+  postsCollection,
+  postUpvotesCollection,
+  removePostUpvote,
   spacesCollection,
+  tagsCollection,
   upsertMembership,
+  upsertPostUpvote,
   upsertSpace,
+  type Tag,
 } from "#/db-collections";
+import { useSpacesSync } from "#/hooks/use-spaces-sync";
+import { usePostsSync } from "#/hooks/use-posts-sync";
+import { authClient } from "#/lib/auth-client";
+import { appRoutes } from "#/lib/routes";
+import { reconcileUpvotesForPostUser } from "#/lib/posts/local-collections";
+import { toggleUpvoteRequest } from "#/lib/posts/api-client";
+import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug")({
   component: SpaceRoute,
@@ -25,8 +38,11 @@ function SpaceRoute() {
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
   const [joinStatus, setJoinStatus] = useState<"idle" | "joining" | "ready" | "not-found">("idle");
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [postActionError, setPostActionError] = useState<string | null>(null);
+  const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
 
-  useV1SpacesSync(Boolean(session?.user));
+  useSpacesSync(Boolean(session?.user));
+  usePostsSync(Boolean(session?.user && joinStatus !== "not-found"), normalizedSpaceSlug);
 
   const { data: spaceRows } = useLiveQuery(
     (query) =>
@@ -58,8 +74,144 @@ function SpaceRoute() {
     [space?.id, session?.user.id],
   );
 
+  const { data: postRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ post: postsCollection })
+        .where(({ post }) => eq(post.spaceId, space.id))
+        .select(({ post }) => ({
+          ...post,
+        }));
+    },
+    [space?.id],
+  );
+
+  const { data: commentRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ comment: commentsCollection })
+        .where(({ comment }) => eq(comment.spaceId, space.id))
+        .select(({ comment }) => ({
+          ...comment,
+        }));
+    },
+    [space?.id],
+  );
+
+  const { data: upvoteRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ postUpvote: postUpvotesCollection })
+        .where(({ postUpvote }) => eq(postUpvote.spaceId, space.id))
+        .select(({ postUpvote }) => ({
+          ...postUpvote,
+        }));
+    },
+    [space?.id],
+  );
+
+  const { data: categoryRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ category: categoriesCollection })
+        .where(({ category }) => eq(category.spaceId, space.id))
+        .select(({ category }) => ({
+          ...category,
+        }));
+    },
+    [space?.id],
+  );
+
+  const { data: tagRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ tag: tagsCollection })
+        .where(({ tag }) => eq(tag.spaceId, space.id))
+        .select(({ tag }) => ({
+          ...tag,
+        }));
+    },
+    [space?.id],
+  );
+
+  const { data: postTagRows } = useLiveQuery((query) =>
+    query.from({ postTag: postTagsCollection }).select(({ postTag }) => ({
+      ...postTag,
+    })),
+  );
+
   const myMembership = myMembershipRows?.[0];
   const canManageMembers = myMembership?.role === "owner" || myMembership?.role === "staff";
+
+  const feed = useMemo(() => {
+    if (!session?.user || !postRows) {
+      return [];
+    }
+
+    const categoriesById = new Map((categoryRows ?? []).map((category) => [category.id, category]));
+    const tagsById = new Map((tagRows ?? []).map((tag) => [tag.id, tag]));
+
+    const postIds = new Set(postRows.map((post) => post.id));
+    const postTagsByPostId = new Map<string, Tag[]>();
+
+    for (const postTag of postTagRows ?? []) {
+      if (!postIds.has(postTag.postId)) {
+        continue;
+      }
+      const tag = tagsById.get(postTag.tagId);
+      if (!tag) {
+        continue;
+      }
+      const current = postTagsByPostId.get(postTag.postId) ?? [];
+      current.push(tag);
+      postTagsByPostId.set(postTag.postId, current);
+    }
+
+    const commentCountByPostId = new Map<string, number>();
+    for (const comment of commentRows ?? []) {
+      commentCountByPostId.set(comment.postId, (commentCountByPostId.get(comment.postId) ?? 0) + 1);
+    }
+
+    const upvoteCountByPostId = new Map<string, number>();
+    const hasUpvotedByPostId = new Set<string>();
+    for (const upvote of upvoteRows ?? []) {
+      upvoteCountByPostId.set(upvote.postId, (upvoteCountByPostId.get(upvote.postId) ?? 0) + 1);
+      if (upvote.userId === session.user.id) {
+        hasUpvotedByPostId.add(upvote.postId);
+      }
+    }
+
+    return [...postRows]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map((post) => ({
+        post,
+        category: post.categoryId ? (categoriesById.get(post.categoryId) ?? null) : null,
+        tags: postTagsByPostId.get(post.id) ?? [],
+        commentCount: commentCountByPostId.get(post.id) ?? 0,
+        upvoteCount: upvoteCountByPostId.get(post.id) ?? 0,
+        hasUpvoted: hasUpvotedByPostId.has(post.id),
+      }));
+  }, [categoryRows, commentRows, postRows, postTagRows, session?.user, tagRows, upvoteRows]);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -89,7 +241,7 @@ function SpaceRoute() {
           return;
         }
 
-        if (error instanceof V1ApiError && error.status === 404) {
+        if (error instanceof SpacesApiError && error.status === 404) {
           setJoinStatus("not-found");
           return;
         }
@@ -106,11 +258,58 @@ function SpaceRoute() {
     };
   }, [normalizedSpaceSlug, session?.user?.id]);
 
+  const onToggleUpvote = async (postId: string) => {
+    if (!session?.user?.id || !space?.id) {
+      return;
+    }
+
+    setPostActionError(null);
+    setTogglingPostId(postId);
+
+    const existing = (upvoteRows ?? []).filter(
+      (upvote) => upvote.postId === postId && upvote.userId === session.user.id,
+    );
+
+    let optimistic: { id: string } | null = null;
+
+    for (const row of existing) {
+      removePostUpvote(row.id);
+    }
+
+    if (existing.length === 0) {
+      optimistic = { id: `optimistic-upvote-${crypto.randomUUID()}` };
+      upsertPostUpvote({
+        id: optimistic.id,
+        postId,
+        spaceId: space.id,
+        userId: session.user.id,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    try {
+      const result = await toggleUpvoteRequest({ postId });
+      reconcileUpvotesForPostUser(postId, session.user.id, result.upvote);
+    } catch {
+      if (optimistic) {
+        removePostUpvote(optimistic.id);
+      }
+
+      for (const row of existing) {
+        upsertPostUpvote(row);
+      }
+
+      setPostActionError("Could not update upvote.");
+    } finally {
+      setTogglingPostId(null);
+    }
+  };
+
   if (isPending) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">Space Join</p>
+          <p className="island-kicker mb-2">Space Feed</p>
           <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
             Loading...
           </h1>
@@ -182,7 +381,7 @@ function SpaceRoute() {
   return (
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
-        <p className="island-kicker mb-2">Space Join</p>
+        <p className="island-kicker mb-2">Space Feed</p>
         <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
           {space?.name ?? normalizedSpaceSlug}
         </h1>
@@ -207,24 +406,60 @@ function SpaceRoute() {
           </p>
         ) : null}
 
+        {postActionError ? (
+          <p className="m-0 mt-2 text-sm font-semibold text-[color:color-mix(in_srgb,var(--action-primary)_72%,var(--sea-ink))]">
+            {postActionError}
+          </p>
+        ) : null}
+
         <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            to={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).to}
+            params={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).params}
+            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-4 py-2 text-sm font-semibold text-white no-underline"
+          >
+            New post
+          </Link>
           {canManageMembers ? (
             <Link
               to={appRoutes.membersSettingsBySlug(normalizedSpaceSlug).to}
               params={appRoutes.membersSettingsBySlug(normalizedSpaceSlug).params}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
             >
               Manage members
             </Link>
           ) : null}
-
           <Link
             to={appRoutes.home}
-            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
           >
             Back to landing page
           </Link>
         </div>
+      </section>
+
+      <section className="mt-6 grid gap-4">
+        {feed.length === 0 ? (
+          <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
+            <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">No posts yet</h2>
+            <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+              Start the first thread for this space.
+            </p>
+          </article>
+        ) : (
+          feed.map((item) => (
+            <PostCard
+              key={item.post.id}
+              spaceSlug={normalizedSpaceSlug}
+              item={item}
+              canEdit={item.post.authorId === session.user.id}
+              isTogglingUpvote={togglingPostId === item.post.id}
+              onToggleUpvote={() => {
+                void onToggleUpvote(item.post.id);
+              }}
+            />
+          ))
+        )}
       </section>
     </main>
   );

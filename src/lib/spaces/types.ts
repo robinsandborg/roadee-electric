@@ -20,7 +20,7 @@ export type MembershipRecord = {
   updatedAt: string;
 };
 
-export type V1State = {
+export type SpacesState = {
   spaces: SpaceRecord[];
   memberships: MembershipRecord[];
 };

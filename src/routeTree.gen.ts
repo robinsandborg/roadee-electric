@@ -13,14 +13,29 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpacesNewRouteImport } from './routes/spaces/new'
 import { Route as SSpaceSlugRouteImport } from './routes/s/$spaceSlug'
-import { Route as ApiV1SpacesRouteImport } from './routes/api/v1/spaces'
+import { Route as ApiSpacesRouteImport } from './routes/api/spaces'
+import { Route as ApiPostsRouteImport } from './routes/api/posts'
+import { Route as SSpaceSlugNewRouteImport } from './routes/s/$spaceSlug/new'
+import { Route as ApiUploadsImageRouteImport } from './routes/api/uploads/image'
+import { Route as ApiSpacesPromoteRouteImport } from './routes/api/spaces/promote'
+import { Route as ApiSpacesJoinRouteImport } from './routes/api/spaces/join'
+import { Route as ApiPostsTaxonomyRouteImport } from './routes/api/posts/taxonomy'
+import { Route as ApiPostsPostIdRouteImport } from './routes/api/posts/$postId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as SSpaceSlugSettingsMembersRouteImport } from './routes/s/$spaceSlug/settings/members'
-import { Route as ApiV1SpacesPromoteRouteImport } from './routes/api/v1/spaces/promote'
-import { Route as ApiV1SpacesJoinRouteImport } from './routes/api/v1/spaces/join'
+import { Route as SSpaceSlugPPostIdRouteImport } from './routes/s/$spaceSlug/p/$postId'
+import { Route as ApiSpacesSpaceSlugMembersRouteImport } from './routes/api/spaces/$spaceSlug/members'
+import { Route as ApiPostsPostIdUpvoteRouteImport } from './routes/api/posts/$postId/upvote'
+import { Route as ApiPostsPostIdCommentsRouteImport } from './routes/api/posts/$postId/comments'
+import { Route as ApiElectricShapesTagsRouteImport } from './routes/api/electric/shapes/tags'
 import { Route as ApiElectricShapesSpacesRouteImport } from './routes/api/electric/shapes/spaces'
+import { Route as ApiElectricShapesPostsRouteImport } from './routes/api/electric/shapes/posts'
+import { Route as ApiElectricShapesPostUpvotesRouteImport } from './routes/api/electric/shapes/post-upvotes'
+import { Route as ApiElectricShapesPostTagsRouteImport } from './routes/api/electric/shapes/post-tags'
 import { Route as ApiElectricShapesMembershipsRouteImport } from './routes/api/electric/shapes/memberships'
-import { Route as ApiV1SpacesSpaceSlugMembersRouteImport } from './routes/api/v1/spaces/$spaceSlug/members'
+import { Route as ApiElectricShapesCommentsRouteImport } from './routes/api/electric/shapes/comments'
+import { Route as ApiElectricShapesCategoriesRouteImport } from './routes/api/electric/shapes/categories'
+import { Route as SSpaceSlugPPostIdEditRouteImport } from './routes/s/$spaceSlug/p/$postId/edit'
 
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
@@ -42,10 +57,45 @@ const SSpaceSlugRoute = SSpaceSlugRouteImport.update({
   path: '/s/$spaceSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1SpacesRoute = ApiV1SpacesRouteImport.update({
-  id: '/api/v1/spaces',
-  path: '/api/v1/spaces',
+const ApiSpacesRoute = ApiSpacesRouteImport.update({
+  id: '/api/spaces',
+  path: '/api/spaces',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPostsRoute = ApiPostsRouteImport.update({
+  id: '/api/posts',
+  path: '/api/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SSpaceSlugNewRoute = SSpaceSlugNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => SSpaceSlugRoute,
+} as any)
+const ApiUploadsImageRoute = ApiUploadsImageRouteImport.update({
+  id: '/api/uploads/image',
+  path: '/api/uploads/image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpacesPromoteRoute = ApiSpacesPromoteRouteImport.update({
+  id: '/promote',
+  path: '/promote',
+  getParentRoute: () => ApiSpacesRoute,
+} as any)
+const ApiSpacesJoinRoute = ApiSpacesJoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => ApiSpacesRoute,
+} as any)
+const ApiPostsTaxonomyRoute = ApiPostsTaxonomyRouteImport.update({
+  id: '/taxonomy',
+  path: '/taxonomy',
+  getParentRoute: () => ApiPostsRoute,
+} as any)
+const ApiPostsPostIdRoute = ApiPostsPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => ApiPostsRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -58,131 +108,273 @@ const SSpaceSlugSettingsMembersRoute =
     path: '/settings/members',
     getParentRoute: () => SSpaceSlugRoute,
   } as any)
-const ApiV1SpacesPromoteRoute = ApiV1SpacesPromoteRouteImport.update({
-  id: '/promote',
-  path: '/promote',
-  getParentRoute: () => ApiV1SpacesRoute,
+const SSpaceSlugPPostIdRoute = SSpaceSlugPPostIdRouteImport.update({
+  id: '/p/$postId',
+  path: '/p/$postId',
+  getParentRoute: () => SSpaceSlugRoute,
 } as any)
-const ApiV1SpacesJoinRoute = ApiV1SpacesJoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => ApiV1SpacesRoute,
+const ApiSpacesSpaceSlugMembersRoute =
+  ApiSpacesSpaceSlugMembersRouteImport.update({
+    id: '/$spaceSlug/members',
+    path: '/$spaceSlug/members',
+    getParentRoute: () => ApiSpacesRoute,
+  } as any)
+const ApiPostsPostIdUpvoteRoute = ApiPostsPostIdUpvoteRouteImport.update({
+  id: '/upvote',
+  path: '/upvote',
+  getParentRoute: () => ApiPostsPostIdRoute,
+} as any)
+const ApiPostsPostIdCommentsRoute = ApiPostsPostIdCommentsRouteImport.update({
+  id: '/comments',
+  path: '/comments',
+  getParentRoute: () => ApiPostsPostIdRoute,
+} as any)
+const ApiElectricShapesTagsRoute = ApiElectricShapesTagsRouteImport.update({
+  id: '/api/electric/shapes/tags',
+  path: '/api/electric/shapes/tags',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectricShapesSpacesRoute = ApiElectricShapesSpacesRouteImport.update({
   id: '/api/electric/shapes/spaces',
   path: '/api/electric/shapes/spaces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElectricShapesPostsRoute = ApiElectricShapesPostsRouteImport.update({
+  id: '/api/electric/shapes/posts',
+  path: '/api/electric/shapes/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectricShapesPostUpvotesRoute =
+  ApiElectricShapesPostUpvotesRouteImport.update({
+    id: '/api/electric/shapes/post-upvotes',
+    path: '/api/electric/shapes/post-upvotes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiElectricShapesPostTagsRoute =
+  ApiElectricShapesPostTagsRouteImport.update({
+    id: '/api/electric/shapes/post-tags',
+    path: '/api/electric/shapes/post-tags',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiElectricShapesMembershipsRoute =
   ApiElectricShapesMembershipsRouteImport.update({
     id: '/api/electric/shapes/memberships',
     path: '/api/electric/shapes/memberships',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1SpacesSpaceSlugMembersRoute =
-  ApiV1SpacesSpaceSlugMembersRouteImport.update({
-    id: '/$spaceSlug/members',
-    path: '/$spaceSlug/members',
-    getParentRoute: () => ApiV1SpacesRoute,
+const ApiElectricShapesCommentsRoute =
+  ApiElectricShapesCommentsRouteImport.update({
+    id: '/api/electric/shapes/comments',
+    path: '/api/electric/shapes/comments',
+    getParentRoute: () => rootRouteImport,
   } as any)
+const ApiElectricShapesCategoriesRoute =
+  ApiElectricShapesCategoriesRouteImport.update({
+    id: '/api/electric/shapes/categories',
+    path: '/api/electric/shapes/categories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SSpaceSlugPPostIdEditRoute = SSpaceSlugPPostIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => SSpaceSlugPPostIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
+  '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
+  '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
+  '/api/spaces/join': typeof ApiSpacesJoinRoute
+  '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/uploads/image': typeof ApiUploadsImageRoute
+  '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
+  '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
+  '/api/electric/shapes/comments': typeof ApiElectricShapesCommentsRoute
   '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/post-tags': typeof ApiElectricShapesPostTagsRoute
+  '/api/electric/shapes/post-upvotes': typeof ApiElectricShapesPostUpvotesRoute
+  '/api/electric/shapes/posts': typeof ApiElectricShapesPostsRoute
   '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
-  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
-  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/api/electric/shapes/tags': typeof ApiElectricShapesTagsRoute
+  '/api/posts/$postId/comments': typeof ApiPostsPostIdCommentsRoute
+  '/api/posts/$postId/upvote': typeof ApiPostsPostIdUpvoteRoute
+  '/api/spaces/$spaceSlug/members': typeof ApiSpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId': typeof SSpaceSlugPPostIdRouteWithChildren
   '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
-  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId/edit': typeof SSpaceSlugPPostIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
+  '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
+  '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
+  '/api/spaces/join': typeof ApiSpacesJoinRoute
+  '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/uploads/image': typeof ApiUploadsImageRoute
+  '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
+  '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
+  '/api/electric/shapes/comments': typeof ApiElectricShapesCommentsRoute
   '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/post-tags': typeof ApiElectricShapesPostTagsRoute
+  '/api/electric/shapes/post-upvotes': typeof ApiElectricShapesPostUpvotesRoute
+  '/api/electric/shapes/posts': typeof ApiElectricShapesPostsRoute
   '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
-  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
-  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/api/electric/shapes/tags': typeof ApiElectricShapesTagsRoute
+  '/api/posts/$postId/comments': typeof ApiPostsPostIdCommentsRoute
+  '/api/posts/$postId/upvote': typeof ApiPostsPostIdUpvoteRoute
+  '/api/spaces/$spaceSlug/members': typeof ApiSpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId': typeof SSpaceSlugPPostIdRouteWithChildren
   '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
-  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId/edit': typeof SSpaceSlugPPostIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api/posts': typeof ApiPostsRouteWithChildren
+  '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/v1/spaces': typeof ApiV1SpacesRouteWithChildren
+  '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
+  '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
+  '/api/spaces/join': typeof ApiSpacesJoinRoute
+  '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/uploads/image': typeof ApiUploadsImageRoute
+  '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
+  '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
+  '/api/electric/shapes/comments': typeof ApiElectricShapesCommentsRoute
   '/api/electric/shapes/memberships': typeof ApiElectricShapesMembershipsRoute
+  '/api/electric/shapes/post-tags': typeof ApiElectricShapesPostTagsRoute
+  '/api/electric/shapes/post-upvotes': typeof ApiElectricShapesPostUpvotesRoute
+  '/api/electric/shapes/posts': typeof ApiElectricShapesPostsRoute
   '/api/electric/shapes/spaces': typeof ApiElectricShapesSpacesRoute
-  '/api/v1/spaces/join': typeof ApiV1SpacesJoinRoute
-  '/api/v1/spaces/promote': typeof ApiV1SpacesPromoteRoute
+  '/api/electric/shapes/tags': typeof ApiElectricShapesTagsRoute
+  '/api/posts/$postId/comments': typeof ApiPostsPostIdCommentsRoute
+  '/api/posts/$postId/upvote': typeof ApiPostsPostIdUpvoteRoute
+  '/api/spaces/$spaceSlug/members': typeof ApiSpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId': typeof SSpaceSlugPPostIdRouteWithChildren
   '/s/$spaceSlug/settings/members': typeof SSpaceSlugSettingsMembersRoute
-  '/api/v1/spaces/$spaceSlug/members': typeof ApiV1SpacesSpaceSlugMembersRoute
+  '/s/$spaceSlug/p/$postId/edit': typeof SSpaceSlugPPostIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/api/posts'
+    | '/api/spaces'
     | '/s/$spaceSlug'
     | '/spaces/new'
     | '/api/auth/$'
-    | '/api/v1/spaces'
+    | '/api/posts/$postId'
+    | '/api/posts/taxonomy'
+    | '/api/spaces/join'
+    | '/api/spaces/promote'
+    | '/api/uploads/image'
+    | '/s/$spaceSlug/new'
+    | '/api/electric/shapes/categories'
+    | '/api/electric/shapes/comments'
     | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/post-tags'
+    | '/api/electric/shapes/post-upvotes'
+    | '/api/electric/shapes/posts'
     | '/api/electric/shapes/spaces'
-    | '/api/v1/spaces/join'
-    | '/api/v1/spaces/promote'
+    | '/api/electric/shapes/tags'
+    | '/api/posts/$postId/comments'
+    | '/api/posts/$postId/upvote'
+    | '/api/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId'
     | '/s/$spaceSlug/settings/members'
-    | '/api/v1/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/api/posts'
+    | '/api/spaces'
     | '/s/$spaceSlug'
     | '/spaces/new'
     | '/api/auth/$'
-    | '/api/v1/spaces'
+    | '/api/posts/$postId'
+    | '/api/posts/taxonomy'
+    | '/api/spaces/join'
+    | '/api/spaces/promote'
+    | '/api/uploads/image'
+    | '/s/$spaceSlug/new'
+    | '/api/electric/shapes/categories'
+    | '/api/electric/shapes/comments'
     | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/post-tags'
+    | '/api/electric/shapes/post-upvotes'
+    | '/api/electric/shapes/posts'
     | '/api/electric/shapes/spaces'
-    | '/api/v1/spaces/join'
-    | '/api/v1/spaces/promote'
+    | '/api/electric/shapes/tags'
+    | '/api/posts/$postId/comments'
+    | '/api/posts/$postId/upvote'
+    | '/api/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId'
     | '/s/$spaceSlug/settings/members'
-    | '/api/v1/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId/edit'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/api/posts'
+    | '/api/spaces'
     | '/s/$spaceSlug'
     | '/spaces/new'
     | '/api/auth/$'
-    | '/api/v1/spaces'
+    | '/api/posts/$postId'
+    | '/api/posts/taxonomy'
+    | '/api/spaces/join'
+    | '/api/spaces/promote'
+    | '/api/uploads/image'
+    | '/s/$spaceSlug/new'
+    | '/api/electric/shapes/categories'
+    | '/api/electric/shapes/comments'
     | '/api/electric/shapes/memberships'
+    | '/api/electric/shapes/post-tags'
+    | '/api/electric/shapes/post-upvotes'
+    | '/api/electric/shapes/posts'
     | '/api/electric/shapes/spaces'
-    | '/api/v1/spaces/join'
-    | '/api/v1/spaces/promote'
+    | '/api/electric/shapes/tags'
+    | '/api/posts/$postId/comments'
+    | '/api/posts/$postId/upvote'
+    | '/api/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId'
     | '/s/$spaceSlug/settings/members'
-    | '/api/v1/spaces/$spaceSlug/members'
+    | '/s/$spaceSlug/p/$postId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ApiPostsRoute: typeof ApiPostsRouteWithChildren
+  ApiSpacesRoute: typeof ApiSpacesRouteWithChildren
   SSpaceSlugRoute: typeof SSpaceSlugRouteWithChildren
   SpacesNewRoute: typeof SpacesNewRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiV1SpacesRoute: typeof ApiV1SpacesRouteWithChildren
+  ApiUploadsImageRoute: typeof ApiUploadsImageRoute
+  ApiElectricShapesCategoriesRoute: typeof ApiElectricShapesCategoriesRoute
+  ApiElectricShapesCommentsRoute: typeof ApiElectricShapesCommentsRoute
   ApiElectricShapesMembershipsRoute: typeof ApiElectricShapesMembershipsRoute
+  ApiElectricShapesPostTagsRoute: typeof ApiElectricShapesPostTagsRoute
+  ApiElectricShapesPostUpvotesRoute: typeof ApiElectricShapesPostUpvotesRoute
+  ApiElectricShapesPostsRoute: typeof ApiElectricShapesPostsRoute
   ApiElectricShapesSpacesRoute: typeof ApiElectricShapesSpacesRoute
+  ApiElectricShapesTagsRoute: typeof ApiElectricShapesTagsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -215,12 +407,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SSpaceSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/spaces': {
-      id: '/api/v1/spaces'
-      path: '/api/v1/spaces'
-      fullPath: '/api/v1/spaces'
-      preLoaderRoute: typeof ApiV1SpacesRouteImport
+    '/api/spaces': {
+      id: '/api/spaces'
+      path: '/api/spaces'
+      fullPath: '/api/spaces'
+      preLoaderRoute: typeof ApiSpacesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/posts': {
+      id: '/api/posts'
+      path: '/api/posts'
+      fullPath: '/api/posts'
+      preLoaderRoute: typeof ApiPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$spaceSlug/new': {
+      id: '/s/$spaceSlug/new'
+      path: '/new'
+      fullPath: '/s/$spaceSlug/new'
+      preLoaderRoute: typeof SSpaceSlugNewRouteImport
+      parentRoute: typeof SSpaceSlugRoute
+    }
+    '/api/uploads/image': {
+      id: '/api/uploads/image'
+      path: '/api/uploads/image'
+      fullPath: '/api/uploads/image'
+      preLoaderRoute: typeof ApiUploadsImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/spaces/promote': {
+      id: '/api/spaces/promote'
+      path: '/promote'
+      fullPath: '/api/spaces/promote'
+      preLoaderRoute: typeof ApiSpacesPromoteRouteImport
+      parentRoute: typeof ApiSpacesRoute
+    }
+    '/api/spaces/join': {
+      id: '/api/spaces/join'
+      path: '/join'
+      fullPath: '/api/spaces/join'
+      preLoaderRoute: typeof ApiSpacesJoinRouteImport
+      parentRoute: typeof ApiSpacesRoute
+    }
+    '/api/posts/taxonomy': {
+      id: '/api/posts/taxonomy'
+      path: '/taxonomy'
+      fullPath: '/api/posts/taxonomy'
+      preLoaderRoute: typeof ApiPostsTaxonomyRouteImport
+      parentRoute: typeof ApiPostsRoute
+    }
+    '/api/posts/$postId': {
+      id: '/api/posts/$postId'
+      path: '/$postId'
+      fullPath: '/api/posts/$postId'
+      preLoaderRoute: typeof ApiPostsPostIdRouteImport
+      parentRoute: typeof ApiPostsRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -236,25 +477,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SSpaceSlugSettingsMembersRouteImport
       parentRoute: typeof SSpaceSlugRoute
     }
-    '/api/v1/spaces/promote': {
-      id: '/api/v1/spaces/promote'
-      path: '/promote'
-      fullPath: '/api/v1/spaces/promote'
-      preLoaderRoute: typeof ApiV1SpacesPromoteRouteImport
-      parentRoute: typeof ApiV1SpacesRoute
+    '/s/$spaceSlug/p/$postId': {
+      id: '/s/$spaceSlug/p/$postId'
+      path: '/p/$postId'
+      fullPath: '/s/$spaceSlug/p/$postId'
+      preLoaderRoute: typeof SSpaceSlugPPostIdRouteImport
+      parentRoute: typeof SSpaceSlugRoute
     }
-    '/api/v1/spaces/join': {
-      id: '/api/v1/spaces/join'
-      path: '/join'
-      fullPath: '/api/v1/spaces/join'
-      preLoaderRoute: typeof ApiV1SpacesJoinRouteImport
-      parentRoute: typeof ApiV1SpacesRoute
+    '/api/spaces/$spaceSlug/members': {
+      id: '/api/spaces/$spaceSlug/members'
+      path: '/$spaceSlug/members'
+      fullPath: '/api/spaces/$spaceSlug/members'
+      preLoaderRoute: typeof ApiSpacesSpaceSlugMembersRouteImport
+      parentRoute: typeof ApiSpacesRoute
+    }
+    '/api/posts/$postId/upvote': {
+      id: '/api/posts/$postId/upvote'
+      path: '/upvote'
+      fullPath: '/api/posts/$postId/upvote'
+      preLoaderRoute: typeof ApiPostsPostIdUpvoteRouteImport
+      parentRoute: typeof ApiPostsPostIdRoute
+    }
+    '/api/posts/$postId/comments': {
+      id: '/api/posts/$postId/comments'
+      path: '/comments'
+      fullPath: '/api/posts/$postId/comments'
+      preLoaderRoute: typeof ApiPostsPostIdCommentsRouteImport
+      parentRoute: typeof ApiPostsPostIdRoute
+    }
+    '/api/electric/shapes/tags': {
+      id: '/api/electric/shapes/tags'
+      path: '/api/electric/shapes/tags'
+      fullPath: '/api/electric/shapes/tags'
+      preLoaderRoute: typeof ApiElectricShapesTagsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/electric/shapes/spaces': {
       id: '/api/electric/shapes/spaces'
       path: '/api/electric/shapes/spaces'
       fullPath: '/api/electric/shapes/spaces'
       preLoaderRoute: typeof ApiElectricShapesSpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric/shapes/posts': {
+      id: '/api/electric/shapes/posts'
+      path: '/api/electric/shapes/posts'
+      fullPath: '/api/electric/shapes/posts'
+      preLoaderRoute: typeof ApiElectricShapesPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric/shapes/post-upvotes': {
+      id: '/api/electric/shapes/post-upvotes'
+      path: '/api/electric/shapes/post-upvotes'
+      fullPath: '/api/electric/shapes/post-upvotes'
+      preLoaderRoute: typeof ApiElectricShapesPostUpvotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric/shapes/post-tags': {
+      id: '/api/electric/shapes/post-tags'
+      path: '/api/electric/shapes/post-tags'
+      fullPath: '/api/electric/shapes/post-tags'
+      preLoaderRoute: typeof ApiElectricShapesPostTagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/electric/shapes/memberships': {
@@ -264,21 +547,94 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElectricShapesMembershipsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/spaces/$spaceSlug/members': {
-      id: '/api/v1/spaces/$spaceSlug/members'
-      path: '/$spaceSlug/members'
-      fullPath: '/api/v1/spaces/$spaceSlug/members'
-      preLoaderRoute: typeof ApiV1SpacesSpaceSlugMembersRouteImport
-      parentRoute: typeof ApiV1SpacesRoute
+    '/api/electric/shapes/comments': {
+      id: '/api/electric/shapes/comments'
+      path: '/api/electric/shapes/comments'
+      fullPath: '/api/electric/shapes/comments'
+      preLoaderRoute: typeof ApiElectricShapesCommentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric/shapes/categories': {
+      id: '/api/electric/shapes/categories'
+      path: '/api/electric/shapes/categories'
+      fullPath: '/api/electric/shapes/categories'
+      preLoaderRoute: typeof ApiElectricShapesCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$spaceSlug/p/$postId/edit': {
+      id: '/s/$spaceSlug/p/$postId/edit'
+      path: '/edit'
+      fullPath: '/s/$spaceSlug/p/$postId/edit'
+      preLoaderRoute: typeof SSpaceSlugPPostIdEditRouteImport
+      parentRoute: typeof SSpaceSlugPPostIdRoute
     }
   }
 }
 
+interface ApiPostsPostIdRouteChildren {
+  ApiPostsPostIdCommentsRoute: typeof ApiPostsPostIdCommentsRoute
+  ApiPostsPostIdUpvoteRoute: typeof ApiPostsPostIdUpvoteRoute
+}
+
+const ApiPostsPostIdRouteChildren: ApiPostsPostIdRouteChildren = {
+  ApiPostsPostIdCommentsRoute: ApiPostsPostIdCommentsRoute,
+  ApiPostsPostIdUpvoteRoute: ApiPostsPostIdUpvoteRoute,
+}
+
+const ApiPostsPostIdRouteWithChildren = ApiPostsPostIdRoute._addFileChildren(
+  ApiPostsPostIdRouteChildren,
+)
+
+interface ApiPostsRouteChildren {
+  ApiPostsPostIdRoute: typeof ApiPostsPostIdRouteWithChildren
+  ApiPostsTaxonomyRoute: typeof ApiPostsTaxonomyRoute
+}
+
+const ApiPostsRouteChildren: ApiPostsRouteChildren = {
+  ApiPostsPostIdRoute: ApiPostsPostIdRouteWithChildren,
+  ApiPostsTaxonomyRoute: ApiPostsTaxonomyRoute,
+}
+
+const ApiPostsRouteWithChildren = ApiPostsRoute._addFileChildren(
+  ApiPostsRouteChildren,
+)
+
+interface ApiSpacesRouteChildren {
+  ApiSpacesJoinRoute: typeof ApiSpacesJoinRoute
+  ApiSpacesPromoteRoute: typeof ApiSpacesPromoteRoute
+  ApiSpacesSpaceSlugMembersRoute: typeof ApiSpacesSpaceSlugMembersRoute
+}
+
+const ApiSpacesRouteChildren: ApiSpacesRouteChildren = {
+  ApiSpacesJoinRoute: ApiSpacesJoinRoute,
+  ApiSpacesPromoteRoute: ApiSpacesPromoteRoute,
+  ApiSpacesSpaceSlugMembersRoute: ApiSpacesSpaceSlugMembersRoute,
+}
+
+const ApiSpacesRouteWithChildren = ApiSpacesRoute._addFileChildren(
+  ApiSpacesRouteChildren,
+)
+
+interface SSpaceSlugPPostIdRouteChildren {
+  SSpaceSlugPPostIdEditRoute: typeof SSpaceSlugPPostIdEditRoute
+}
+
+const SSpaceSlugPPostIdRouteChildren: SSpaceSlugPPostIdRouteChildren = {
+  SSpaceSlugPPostIdEditRoute: SSpaceSlugPPostIdEditRoute,
+}
+
+const SSpaceSlugPPostIdRouteWithChildren =
+  SSpaceSlugPPostIdRoute._addFileChildren(SSpaceSlugPPostIdRouteChildren)
+
 interface SSpaceSlugRouteChildren {
+  SSpaceSlugNewRoute: typeof SSpaceSlugNewRoute
+  SSpaceSlugPPostIdRoute: typeof SSpaceSlugPPostIdRouteWithChildren
   SSpaceSlugSettingsMembersRoute: typeof SSpaceSlugSettingsMembersRoute
 }
 
 const SSpaceSlugRouteChildren: SSpaceSlugRouteChildren = {
+  SSpaceSlugNewRoute: SSpaceSlugNewRoute,
+  SSpaceSlugPPostIdRoute: SSpaceSlugPPostIdRouteWithChildren,
   SSpaceSlugSettingsMembersRoute: SSpaceSlugSettingsMembersRoute,
 }
 
@@ -286,31 +642,23 @@ const SSpaceSlugRouteWithChildren = SSpaceSlugRoute._addFileChildren(
   SSpaceSlugRouteChildren,
 )
 
-interface ApiV1SpacesRouteChildren {
-  ApiV1SpacesJoinRoute: typeof ApiV1SpacesJoinRoute
-  ApiV1SpacesPromoteRoute: typeof ApiV1SpacesPromoteRoute
-  ApiV1SpacesSpaceSlugMembersRoute: typeof ApiV1SpacesSpaceSlugMembersRoute
-}
-
-const ApiV1SpacesRouteChildren: ApiV1SpacesRouteChildren = {
-  ApiV1SpacesJoinRoute: ApiV1SpacesJoinRoute,
-  ApiV1SpacesPromoteRoute: ApiV1SpacesPromoteRoute,
-  ApiV1SpacesSpaceSlugMembersRoute: ApiV1SpacesSpaceSlugMembersRoute,
-}
-
-const ApiV1SpacesRouteWithChildren = ApiV1SpacesRoute._addFileChildren(
-  ApiV1SpacesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ApiPostsRoute: ApiPostsRouteWithChildren,
+  ApiSpacesRoute: ApiSpacesRouteWithChildren,
   SSpaceSlugRoute: SSpaceSlugRouteWithChildren,
   SpacesNewRoute: SpacesNewRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiV1SpacesRoute: ApiV1SpacesRouteWithChildren,
+  ApiUploadsImageRoute: ApiUploadsImageRoute,
+  ApiElectricShapesCategoriesRoute: ApiElectricShapesCategoriesRoute,
+  ApiElectricShapesCommentsRoute: ApiElectricShapesCommentsRoute,
   ApiElectricShapesMembershipsRoute: ApiElectricShapesMembershipsRoute,
+  ApiElectricShapesPostTagsRoute: ApiElectricShapesPostTagsRoute,
+  ApiElectricShapesPostUpvotesRoute: ApiElectricShapesPostUpvotesRoute,
+  ApiElectricShapesPostsRoute: ApiElectricShapesPostsRoute,
   ApiElectricShapesSpacesRoute: ApiElectricShapesSpacesRoute,
+  ApiElectricShapesTagsRoute: ApiElectricShapesTagsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,5 @@
 /**
- * V1 Electric hook-in point.
+ * Spaces Electric hook-in point.
  *
  * In local dev without Electric configured, we sync via app API polling.
  * When `VITE_ELECTRIC_SHAPE_PROXY_URL` is defined, this module exposes shape URLs
@@ -31,4 +31,52 @@ export function getMembershipsShapeUrl(): string | null {
     return null;
   }
   return `${proxy.replace(/\/$/, "")}/memberships`;
+}
+
+export function getPostsShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/posts`;
+}
+
+export function getCommentsShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/comments`;
+}
+
+export function getPostUpvotesShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/post-upvotes`;
+}
+
+export function getCategoriesShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/categories`;
+}
+
+export function getTagsShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/tags`;
+}
+
+export function getPostTagsShapeUrl(): string | null {
+  const proxy = getElectricShapeProxyUrl();
+  if (!proxy) {
+    return null;
+  }
+  return `${proxy.replace(/\/$/, "")}/post-tags`;
 }

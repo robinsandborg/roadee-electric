@@ -4,9 +4,9 @@ import {
   isElectricCloudConfigured,
   quoteSqlLiteral,
 } from "#/lib/electric/shape.server";
-import { requireSessionUser } from "#/lib/v1/auth-session.server";
-import { listVisibleStateForUserFromDb } from "#/lib/v1/repository.server";
-import type { SpaceRecord } from "#/lib/v1/types";
+import { requireSessionUser } from "#/lib/spaces/auth-session.server";
+import { listVisibleStateForUserFromDb } from "#/lib/spaces/repository.server";
+import type { SpaceRecord } from "#/lib/spaces/types";
 
 export const Route = createFileRoute("/api/electric/shapes/spaces")({
   server: {
@@ -15,35 +15,39 @@ export const Route = createFileRoute("/api/electric/shapes/spaces")({
         try {
           const user = await requireSessionUser(request);
           if (isElectricCloudConfigured()) {
-            const ownMembershipRows = await fetchElectricShapeRows({
-              table: "memberships",
-              where: `user_id = ${quoteSqlLiteral(user.id)}`,
-            });
+            try {
+              const ownMembershipRows = await fetchElectricShapeRows({
+                table: "memberships",
+                where: `user_id = ${quoteSqlLiteral(user.id)}`,
+              });
 
-            const spaceIds = Array.from(
-              new Set(
-                ownMembershipRows
-                  .map((row) => (typeof row.space_id === "string" ? row.space_id : null))
-                  .filter((value): value is string => Boolean(value)),
-              ),
-            );
+              const spaceIds = Array.from(
+                new Set(
+                  ownMembershipRows
+                    .map((row) => (typeof row.space_id === "string" ? row.space_id : null))
+                    .filter((value): value is string => Boolean(value)),
+                ),
+              );
 
-            if (spaceIds.length === 0) {
-              return Response.json({ rows: [] }, { status: 200 });
+              if (spaceIds.length === 0) {
+                return Response.json({ rows: [] }, { status: 200 });
+              }
+
+              const where = `id IN (${spaceIds.map(quoteSqlLiteral).join(",")})`;
+              const spaceRows = await fetchElectricShapeRows({
+                table: "spaces",
+                where,
+              });
+
+              return Response.json(
+                {
+                  rows: spaceRows.map(mapElectricSpaceRow),
+                },
+                { status: 200 },
+              );
+            } catch (error) {
+              console.warn("[electric-shape] Falling back to DB snapshot for spaces.", error);
             }
-
-            const where = `id IN (${spaceIds.map(quoteSqlLiteral).join(",")})`;
-            const spaceRows = await fetchElectricShapeRows({
-              table: "spaces",
-              where,
-            });
-
-            return Response.json(
-              {
-                rows: spaceRows.map(mapElectricSpaceRow),
-              },
-              { status: 200 },
-            );
           }
 
           const visible = await listVisibleStateForUserFromDb(user.id);

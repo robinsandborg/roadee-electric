@@ -1,8 +1,13 @@
 import type { PoolClient } from "pg";
 import { getPostgresPool } from "#/lib/postgres.server";
 import { isValidSpaceSlug, normalizeSpaceSlug } from "#/lib/space-slug";
-import { V1ServiceError } from "#/lib/v1/service";
-import type { MembershipRecord, MembershipRole, SpaceRecord, V1State } from "#/lib/v1/types";
+import { SpacesServiceError } from "#/lib/spaces/service";
+import type {
+  MembershipRecord,
+  MembershipRole,
+  SpaceRecord,
+  SpacesState,
+} from "#/lib/spaces/types";
 
 type SpaceRow = {
   id: string;
@@ -41,7 +46,7 @@ type SpaceAndMembershipRow = {
   membership_updated_at: Date;
 };
 
-export async function listVisibleStateForUserFromDb(userId: string): Promise<V1State> {
+export async function listVisibleStateForUserFromDb(userId: string): Promise<SpacesState> {
   const pool = getPostgresPool();
 
   const spacesResult = await pool.query<SpaceRow>(
@@ -93,7 +98,7 @@ export async function createSpaceWithOwnerInDb(input: {
 }> {
   const normalizedSlug = normalizeSpaceSlug(input.slug);
   if (!isValidSpaceSlug(normalizedSlug)) {
-    throw new V1ServiceError(
+    throw new SpacesServiceError(
       "invalid_slug",
       "Slug must be lowercase letters, numbers, and dashes.",
     );
@@ -136,7 +141,7 @@ export async function createSpaceWithOwnerInDb(input: {
   } catch (error) {
     await safeRollback(client);
     if (isUniqueViolation(error)) {
-      throw new V1ServiceError("slug_conflict", "A space with this slug already exists.");
+      throw new SpacesServiceError("slug_conflict", "A space with this slug already exists.");
     }
     throw error;
   } finally {
@@ -170,7 +175,7 @@ export async function joinSpaceBySlugInDb(input: {
     );
     const spaceRow = spaceResult.rows[0];
     if (!spaceRow) {
-      throw new V1ServiceError("space_not_found", "Space not found.");
+      throw new SpacesServiceError("space_not_found", "Space not found.");
     }
 
     const existingMembershipResult = await client.query<MembershipRow>(
@@ -208,7 +213,7 @@ export async function joinSpaceBySlugInDb(input: {
     };
   } catch (error) {
     await safeRollback(client);
-    if (error instanceof V1ServiceError) {
+    if (error instanceof SpacesServiceError) {
       throw error;
     }
 
@@ -252,7 +257,7 @@ export async function listMembersBySlugForActorInDb(input: {
     );
     const spaceRow = spaceResult.rows[0];
     if (!spaceRow) {
-      throw new V1ServiceError("space_not_found", "Space not found.");
+      throw new SpacesServiceError("space_not_found", "Space not found.");
     }
 
     const actorMembershipResult = await client.query<MembershipRow>(
@@ -265,7 +270,7 @@ export async function listMembersBySlugForActorInDb(input: {
     );
     const actorMembership = actorMembershipResult.rows[0];
     if (!actorMembership) {
-      throw new V1ServiceError("membership_required", "You are not a member of this space.");
+      throw new SpacesServiceError("membership_required", "You are not a member of this space.");
     }
 
     const membershipsResult = await client.query<MembershipRow>(
@@ -312,7 +317,7 @@ export async function promoteMemberToStaffInDb(input: {
     );
     const spaceId = spaceResult.rows[0]?.id;
     if (!spaceId) {
-      throw new V1ServiceError("space_not_found", "Space not found.");
+      throw new SpacesServiceError("space_not_found", "Space not found.");
     }
 
     const actorResult = await client.query<{ role: MembershipRole }>(
@@ -325,10 +330,10 @@ export async function promoteMemberToStaffInDb(input: {
     );
     const actorRole = actorResult.rows[0]?.role;
     if (!actorRole) {
-      throw new V1ServiceError("membership_required", "You must be a member of this space.");
+      throw new SpacesServiceError("membership_required", "You must be a member of this space.");
     }
     if (actorRole !== "owner" && actorRole !== "staff") {
-      throw new V1ServiceError("forbidden", "Only owner or staff can promote members.");
+      throw new SpacesServiceError("forbidden", "Only owner or staff can promote members.");
     }
 
     const updateResult = await client.query<MembershipRow>(
@@ -343,7 +348,7 @@ export async function promoteMemberToStaffInDb(input: {
     );
 
     if (!updateResult.rows[0]) {
-      throw new V1ServiceError("target_not_found", "Target member not found.");
+      throw new SpacesServiceError("target_not_found", "Target member not found.");
     }
 
     await client.query("COMMIT");

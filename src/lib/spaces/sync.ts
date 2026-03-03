@@ -11,13 +11,17 @@ import {
   getSpacesShapeUrl,
   isElectricShapeSyncEnabled,
 } from "#/lib/electric/client";
-import { fetchVisibleSpacesSnapshot } from "#/lib/v1/api-client";
+import { fetchVisibleSpacesSnapshot } from "#/lib/spaces/api-client";
 
 export async function syncVisibleSpacesIntoCollections(): Promise<void> {
   if (isElectricShapeSyncEnabled()) {
-    const shapeSnapshot = await fetchShapeSnapshot();
-    applySnapshot(shapeSnapshot.spaces, shapeSnapshot.memberships);
-    return;
+    try {
+      const shapeSnapshot = await fetchShapeSnapshot();
+      applySnapshot(shapeSnapshot.spaces, shapeSnapshot.memberships);
+      return;
+    } catch {
+      // Fall through to API snapshot when shape proxy calls fail.
+    }
   }
 
   const snapshot = await fetchVisibleSpacesSnapshot();
@@ -73,6 +77,9 @@ async function fetchShapeSnapshot(): Promise<{
 
   const spacesPayload = await safeJson(spacesResponse);
   const membershipsPayload = await safeJson(membershipsResponse);
+  if (!spacesResponse.ok || !membershipsResponse.ok) {
+    throw new Error("Shape proxy request failed.");
+  }
 
   return {
     spaces: Array.isArray((spacesPayload as { rows?: unknown[] }).rows)

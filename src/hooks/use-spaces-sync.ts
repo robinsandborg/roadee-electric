@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { syncVisibleSpacesIntoCollections } from "#/lib/v1/sync";
+import { syncVisibleSpacesIntoCollections } from "#/lib/spaces/sync";
 
-export function useV1SpacesSync(enabled: boolean): void {
+export function useSpacesSync(enabled: boolean): void {
   useEffect(() => {
     if (!enabled) {
       return;

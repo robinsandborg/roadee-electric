@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { normalizeSpaceSlug } from "#/lib/space-slug";
-import { requireSessionUser } from "#/lib/v1/auth-session.server";
-import { V1ServiceError } from "#/lib/v1/service";
+import { requireSessionUser } from "#/lib/spaces/auth-session.server";
+import { SpacesServiceError } from "#/lib/spaces/service";
 import {
   createSpaceWithOwnerInDb,
   listVisibleStateForUserFromDb,
-} from "#/lib/v1/repository.server";
+} from "#/lib/spaces/repository.server";
 
-export const Route = createFileRoute("/api/v1/spaces")({
+export const Route = createFileRoute("/api/spaces")({
   server: {
     handlers: {
       GET: async ({ request }) => {
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/v1/spaces")({
 });
 
 function mapRouteError(error: unknown): Response {
-  if (error instanceof V1ServiceError) {
+  if (error instanceof SpacesServiceError) {
     if (error.code === "slug_conflict") {
       return errorResponse(409, error.code, error.message);
     }

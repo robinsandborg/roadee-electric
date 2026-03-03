@@ -3,8 +3,12 @@ import { and, eq, useLiveQuery } from "@tanstack/react-db";
 import { useEffect, useMemo, useState } from "react";
 import { appRoutes } from "#/lib/routes";
 import { authClient } from "#/lib/auth-client";
-import { fetchMembersForSpace, promoteMemberToStaffRequest, V1ApiError } from "#/lib/v1/api-client";
-import { useV1SpacesSync } from "#/hooks/use-v1-sync";
+import {
+  fetchMembersForSpace,
+  promoteMemberToStaffRequest,
+  SpacesApiError,
+} from "#/lib/spaces/api-client";
+import { useSpacesSync } from "#/hooks/use-spaces-sync";
 import {
   membershipsCollection,
   spacesCollection,
@@ -24,7 +28,7 @@ function MembersSettingsRoute() {
   const [error, setError] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
 
-  useV1SpacesSync(Boolean(session?.user));
+  useSpacesSync(Boolean(session?.user));
 
   const { data: spaces } = useLiveQuery(
     (query) =>
@@ -114,9 +118,9 @@ function MembersSettingsRoute() {
           return;
         }
 
-        if (unknownError instanceof V1ApiError && unknownError.status === 403) {
+        if (unknownError instanceof SpacesApiError && unknownError.status === 403) {
           setError("You do not have access to this members page.");
-        } else if (unknownError instanceof V1ApiError && unknownError.status === 404) {
+        } else if (unknownError instanceof SpacesApiError && unknownError.status === 404) {
           setError("Space not found.");
         } else {
           setError("Could not load members.");
@@ -270,7 +274,7 @@ async function promoteMember(
     });
     upsertMembership(result.membership);
   } catch (unknownError) {
-    if (unknownError instanceof V1ApiError && unknownError.status === 403) {
+    if (unknownError instanceof SpacesApiError && unknownError.status === 403) {
       setError("Only owner or staff can promote members.");
     } else {
       setError("Could not promote member.");

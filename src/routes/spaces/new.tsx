@@ -3,10 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { appRoutes } from "#/lib/routes";
 import { authClient } from "#/lib/auth-client";
 import { isValidSpaceSlug, normalizeSpaceSlug } from "#/lib/space-slug";
-import { createSpaceRequest, V1ApiError } from "#/lib/v1/api-client";
-import { syncVisibleSpacesIntoCollections } from "#/lib/v1/sync";
+import { createSpaceRequest, SpacesApiError } from "#/lib/spaces/api-client";
+import { syncVisibleSpacesIntoCollections } from "#/lib/spaces/sync";
 import { removeMembership, removeSpace, upsertMembership, upsertSpace } from "#/db-collections";
-import { useV1SpacesSync } from "#/hooks/use-v1-sync";
+import { useSpacesSync } from "#/hooks/use-spaces-sync";
 
 export const Route = createFileRoute("/spaces/new")({
   component: CreateSpaceRoute,
@@ -26,7 +26,7 @@ function CreateSpaceRoute() {
   const [error, setError] = useState<string | null>(null);
   const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
 
-  useV1SpacesSync(Boolean(session?.user));
+  useSpacesSync(Boolean(session?.user));
 
   useEffect(() => {
     if (slugEdited) {
@@ -41,7 +41,7 @@ function CreateSpaceRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">V1 Space Setup</p>
+          <p className="island-kicker mb-2">Space Setup</p>
           <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
             Preparing your create flow...
           </h1>
@@ -54,7 +54,7 @@ function CreateSpaceRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">V1 Space Setup</p>
+          <p className="island-kicker mb-2">Space Setup</p>
           <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
             Sign in to create your space
           </h1>
@@ -151,7 +151,7 @@ function CreateSpaceRoute() {
       removeSpace(optimisticSpaceId);
       removeMembership(optimisticOwnerMembershipId);
 
-      if (unknownError instanceof V1ApiError && unknownError.code === "slug_conflict") {
+      if (unknownError instanceof SpacesApiError && unknownError.code === "slug_conflict") {
         const suggestion = `${normalizedSlug}-${Math.floor(Math.random() * 900 + 100)}`;
         setError("That slug is already taken.");
         setSlugSuggestion(suggestion);
@@ -167,7 +167,7 @@ function CreateSpaceRoute() {
   return (
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
-        <p className="island-kicker mb-2">V1 Space Setup</p>
+        <p className="island-kicker mb-2">Space Setup</p>
         <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
           Create your product space
         </h1>
