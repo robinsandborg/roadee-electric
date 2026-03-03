@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "electricsql": {
+      "source": "oakoss/agent-skills",
+      "sourceType": "github",
+      "computedHash": "1df43c9fd2e5267997900c7aeb956090acc8041e410a86567ac16ecc4a1fb7f7"
+    },
+    "tanstack-db": {
+      "source": "oakoss/agent-skills",
+      "sourceType": "github",
+      "computedHash": "622d517c24b83887dcf1049f240c21788fd30253343529842e5d10ef5069e165"
+    }
+  }
+}
