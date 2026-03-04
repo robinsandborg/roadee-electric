@@ -44,9 +44,7 @@ export async function fetchShapeRowsBySpaceIds(input: {
     return [];
   }
 
-  const where =
-    input.where ??
-    `${input.table === "post_tags" ? "" : "space_id"} IN (${input.spaceIds.map(quoteSqlLiteral).join(",")})`;
+  const where = input.where ?? `space_id IN (${input.spaceIds.map(quoteSqlLiteral).join(",")})`;
 
   return fetchElectricShapeRows({
     table: input.table,

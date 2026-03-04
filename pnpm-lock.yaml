@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@electric-sql/client':
+        specifier: ^1.5.10
+        version: 1.5.10
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.2.1(vite@7.3.1(@types/node@22.19.13)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
+      '@tanstack/electric-db-collection':
+        specifier: ^0.2.37
+        version: 0.2.37(typescript@5.9.3)
       '@tanstack/query-db-collection':
         specifier: ^1.0.8
         version: 1.0.27(@tanstack/query-core@5.90.20)(typescript@5.9.3)
@@ -352,6 +358,9 @@ packages:
     peerDependencies:
       effect: ^3.17.7
 
+  '@electric-sql/client@1.5.10':
+    resolution: {integrity: sha512-AMXaGhGSUYPZSQHvtUIYoW0IQVW5MSAT1Oc2jDb1KyAPQa5wypoW6NzGqaUR7jKkNh9vJiqKjT56nH+fh1bu0g==}
+
   '@electric-sql/pglite-socket@0.0.20':
     resolution: {integrity: sha512-J5nLGsicnD9wJHnno9r+DGxfcZWh+YJMCe0q/aCgtG6XOm9Z7fKeite8IZSNXgZeGltSigM9U/vAWZQWdgcSFg==}
     hasBin: true
@@ -561,6 +570,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@microsoft/fetch-event-source@2.0.1':
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@mongodb-js/saslprep@1.4.6':
     resolution: {integrity: sha512-y+x3H1xBZd38n10NZF/rEBlvDOOMQ6LKUTHqr8R9VkJ+mmQOYtJFxIlkkK8fZrtOiL6VixbOBWMbZGBdal3Z1g==}
@@ -1305,6 +1317,9 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       solid-js: '>=1.9.7'
+
+  '@tanstack/electric-db-collection@0.2.37':
+    resolution: {integrity: sha512-IqrsSmrW9W8gQTzvSql4lQ31BtqojQ3Un2UZoS8tb3CDRbWSD+R1qXLt+UKiYvGEfWLjBP1sdZV2D6rC0vVD0g==}
 
   '@tanstack/form-core@1.28.3':
     resolution: {integrity: sha512-DBhnu1d5VfACAYOAZJO8tsEUHjWczZMJY8v/YrtAJNWpwvL/3ogDuz8e6yUB2m/iVTNq6K8yrnVN2nrX0/BX/w==}
@@ -3706,6 +3721,12 @@ snapshots:
       msgpackr: 1.11.8
       multipasta: 0.2.7
 
+  '@electric-sql/client@1.5.10':
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64': 4.59.0
+
   '@electric-sql/pglite-socket@0.0.20(@electric-sql/pglite@0.3.15)':
     dependencies:
       '@electric-sql/pglite': 0.3.15
@@ -3836,6 +3857,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@microsoft/fetch-event-source@2.0.1': {}
 
   '@mongodb-js/saslprep@1.4.6':
     dependencies:
@@ -4393,6 +4416,17 @@ snapshots:
       - bufferutil
       - csstype
       - utf-8-validate
+
+  '@tanstack/electric-db-collection@0.2.37(typescript@5.9.3)':
+    dependencies:
+      '@electric-sql/client': 1.5.10
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.5.30(typescript@5.9.3)
+      '@tanstack/store': 0.8.1
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   '@tanstack/form-core@1.28.3':
     dependencies:

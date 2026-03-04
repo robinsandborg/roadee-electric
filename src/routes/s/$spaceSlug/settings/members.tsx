@@ -5,10 +5,8 @@ import { appRoutes } from "#/lib/routes";
 import { authClient } from "#/lib/auth-client";
 import {
   fetchMembersForSpace,
-  promoteMemberToStaffRequest,
   SpacesApiError,
 } from "#/lib/spaces/api-client";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
 import {
   membershipsCollection,
   spacesCollection,
@@ -27,8 +25,6 @@ function MembersSettingsRoute() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
 
   const { data: spaces } = useLiveQuery(
     (query) =>
@@ -215,6 +211,7 @@ function MembersSettingsRoute() {
                             disabled={promotingUserId === member.userId}
                             onClick={() => {
                               void promoteMember(
+                                member.id,
                                 member.userId,
                                 normalizedSpaceSlug,
                                 setPromotingUserId,
@@ -260,6 +257,7 @@ function MembersSettingsRoute() {
 }
 
 async function promoteMember(
+  membershipId: string,
   targetUserId: string,
   spaceSlug: string,
   setPromotingUserId: (value: string | null) => void,
@@ -268,11 +266,22 @@ async function promoteMember(
   setPromotingUserId(targetUserId);
   setError(null);
   try {
-    const result = await promoteMemberToStaffRequest({
-      spaceSlug,
-      targetUserId,
-    });
-    upsertMembership(result.membership);
+    const tx = membershipsCollection.update(
+      membershipId,
+      {
+        metadata: {
+          source: "user",
+          action: "promote-member",
+          spaceSlug,
+          targetUserId,
+        },
+      },
+      (draft) => {
+        draft.role = "staff";
+        draft.updatedAt = new Date().toISOString();
+      },
+    );
+    await tx.isPersisted.promise;
   } catch (unknownError) {
     if (unknownError instanceof SpacesApiError && unknownError.status === 403) {
       setError("Only owner or staff can promote members.");

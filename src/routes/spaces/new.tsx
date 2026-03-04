@@ -4,9 +4,7 @@ import { appRoutes } from "#/lib/routes";
 import { authClient } from "#/lib/auth-client";
 import { isValidSpaceSlug, normalizeSpaceSlug } from "#/lib/space-slug";
 import { createSpaceRequest, SpacesApiError } from "#/lib/spaces/api-client";
-import { syncVisibleSpacesIntoCollections } from "#/lib/spaces/sync";
 import { removeMembership, removeSpace, upsertMembership, upsertSpace } from "#/db-collections";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
 
 export const Route = createFileRoute("/spaces/new")({
   component: CreateSpaceRoute,
@@ -25,8 +23,6 @@ function CreateSpaceRoute() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slugSuggestion, setSlugSuggestion] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
 
   useEffect(() => {
     if (slugEdited) {
@@ -138,14 +134,16 @@ function CreateSpaceRoute() {
 
     setIsSaving(true);
     try {
-      await createSpaceRequest({
+      const created = await createSpaceRequest({
         id: optimisticSpaceId,
         ownerMembershipId: optimisticOwnerMembershipId,
         name: trimmedName,
         slug: normalizedSlug,
         description: trimmedDescription,
       });
-      await syncVisibleSpacesIntoCollections();
+
+      upsertSpace(created.space);
+      upsertMembership(created.ownerMembership);
       await navigate(appRoutes.spaceBySlug(normalizedSlug));
     } catch (unknownError) {
       removeSpace(optimisticSpaceId);

@@ -4,25 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import {
   categoriesCollection,
   membershipsCollection,
-  removePost,
-  removePostTag,
+  postsCollection,
   spacesCollection,
   tagsCollection,
   upsertMembership,
-  upsertPost,
-  upsertPostTag,
   upsertSpace,
 } from "#/db-collections";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
-import { usePostsSync } from "#/hooks/use-posts-sync";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 import {
-  createPostRequest,
   richTextFromPlainText,
   uploadPostImageRequest,
 } from "#/lib/posts/api-client";
-import { replacePostTagsForPost } from "#/lib/posts/local-collections";
 import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/new")({
@@ -49,9 +42,6 @@ function NewPostRoute() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
-  usePostsSync(Boolean(session?.user), normalizedSpaceSlug);
 
   const { data: spaceRows } = useLiveQuery(
     (query) =>
@@ -186,64 +176,46 @@ function NewPostRoute() {
     setError(null);
     setIsSaving(true);
 
-    const optimisticPostId = crypto.randomUUID();
-    const optimisticNow = new Date().toISOString();
-
-    const optimisticCategoryId = categoryId || null;
-
-    upsertPost({
-      id: optimisticPostId,
-      spaceId: space.id,
-      authorId: session.user.id,
-      title: trimmedTitle,
-      bodyRichText: richTextFromPlainText(trimmedBody),
-      imageUrl: imageUrl || null,
-      imageMeta,
-      categoryId: optimisticCategoryId,
-      createdAt: optimisticNow,
-      updatedAt: optimisticNow,
-    });
-
-    const optimisticPostTagIds: string[] = [];
-    for (const tagId of selectedTagIds) {
-      const postTagId = crypto.randomUUID();
-      optimisticPostTagIds.push(postTagId);
-      upsertPostTag({
-        id: postTagId,
-        postId: optimisticPostId,
-        tagId,
-      });
-    }
+    const postId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const tagNames = newTagNames
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0 && !tagNameSuggestions.has(value));
 
     try {
-      const created = await createPostRequest({
-        id: optimisticPostId,
-        spaceSlug: normalizedSpaceSlug,
-        title: trimmedTitle,
-        bodyRichText: richTextFromPlainText(trimmedBody),
-        imageUrl: imageUrl || null,
-        imageMeta,
-        categoryId: categoryId || null,
-        categoryName: categoryId ? null : newCategoryName.trim() || null,
-        tagIds: selectedTagIds,
-        tagNames: newTagNames
-          .split(",")
-          .map((value) => value.trim())
-          .filter((value) => value.length > 0 && !tagNameSuggestions.has(value)),
-      });
+      const tx = postsCollection.insert(
+        {
+          id: postId,
+          spaceId: space.id,
+          authorId: session.user.id,
+          title: trimmedTitle,
+          bodyRichText: richTextFromPlainText(trimmedBody),
+          imageUrl: imageUrl || null,
+          imageMeta,
+          categoryId: categoryId || null,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          metadata: {
+            source: "user",
+            action: "create-post",
+            spaceSlug: normalizedSpaceSlug,
+            categoryName: categoryId ? null : newCategoryName.trim() || null,
+            tagIds: selectedTagIds,
+            tagNames,
+          },
+        },
+      );
 
-      upsertPost(created.post);
-      replacePostTagsForPost(created.post.id, created.postTags);
+      await tx.isPersisted.promise;
 
       await navigate({
-        to: appRoutes.postById(normalizedSpaceSlug, created.post.id).to,
-        params: appRoutes.postById(normalizedSpaceSlug, created.post.id).params,
+        to: appRoutes.postById(normalizedSpaceSlug, postId).to,
+        params: appRoutes.postById(normalizedSpaceSlug, postId).params,
       });
     } catch {
-      removePost(optimisticPostId);
-      for (const postTagId of optimisticPostTagIds) {
-        removePostTag(postTagId);
-      }
       setError("Could not create post. Please try again.");
     } finally {
       setIsSaving(false);

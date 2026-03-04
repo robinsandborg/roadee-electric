@@ -50,6 +50,7 @@ export type PostTagRecord = {
   id: string;
   postId: string;
   tagId: string;
+  spaceId: string | null;
 };
 
 export type PostsSnapshot = {

@@ -10,26 +10,17 @@ import {
   postTagsCollection,
   postsCollection,
   postUpvotesCollection,
-  removeComment,
-  removePostUpvote,
   spacesCollection,
   tagsCollection,
-  upsertComment,
   upsertMembership,
-  upsertPostUpvote,
   upsertSpace,
 } from "#/db-collections";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
-import { usePostsSync } from "#/hooks/use-posts-sync";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 import {
-  createCommentRequest,
-  richTextFromPlainText,
-  toggleUpvoteRequest,
   PostsApiError,
+  richTextFromPlainText,
 } from "#/lib/posts/api-client";
-import { reconcileUpvotesForPostUser } from "#/lib/posts/local-collections";
 import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId")({
@@ -47,9 +38,6 @@ function PostDetailRoute() {
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [isTogglingUpvote, setIsTogglingUpvote] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
-  usePostsSync(Boolean(session?.user), normalizedSpaceSlug);
 
   const { data: spaceRows } = useLiveQuery(
     (query) =>
@@ -138,14 +126,19 @@ function PostDetailRoute() {
   );
 
   const { data: postTagRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ postTag: postTagsCollection })
-        .where(({ postTag }) => eq(postTag.postId, postId))
+        .where(({ postTag }) => and(eq(postTag.postId, postId), eq(postTag.spaceId, space.id)))
         .select(({ postTag }) => ({
           ...postTag,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
   );
 
   const { data: upvoteRows } = useLiveQuery(
@@ -246,37 +239,28 @@ function PostDetailRoute() {
     setActionError(null);
     setIsTogglingUpvote(true);
 
-    const existing = (upvoteRows ?? []).filter((row) => row.userId === session.user.id);
-
-    let optimistic: { id: string } | null = null;
-
-    for (const row of existing) {
-      removePostUpvote(row.id);
-    }
-
-    if (existing.length === 0) {
-      optimistic = { id: `optimistic-upvote-${crypto.randomUUID()}` };
-      upsertPostUpvote({
-        id: optimistic.id,
-        postId,
-        spaceId: space.id,
-        userId: session.user.id,
-        createdAt: new Date().toISOString(),
-      });
-    }
+    const existing = (upvoteRows ?? []).find((row) => row.userId === session.user.id);
 
     try {
-      const result = await toggleUpvoteRequest({ postId });
-      reconcileUpvotesForPostUser(postId, session.user.id, result.upvote);
+      const tx = existing
+        ? postUpvotesCollection.delete(existing.id, {
+            metadata: { source: "user", action: "toggle-upvote-off" },
+          })
+        : postUpvotesCollection.insert(
+            {
+              id: `optimistic-upvote-${crypto.randomUUID()}`,
+              postId,
+              spaceId: space.id,
+              userId: session.user.id,
+              createdAt: new Date().toISOString(),
+            },
+            {
+              metadata: { source: "user", action: "toggle-upvote-on" },
+            },
+          );
+
+      await tx.isPersisted.promise;
     } catch {
-      if (optimistic) {
-        removePostUpvote(optimistic.id);
-      }
-
-      for (const row of existing) {
-        upsertPostUpvote(row);
-      }
-
       setActionError("Could not update upvote.");
     } finally {
       setIsTogglingUpvote(false);
@@ -299,31 +283,32 @@ function PostDetailRoute() {
     setActionError(null);
     setIsSendingComment(true);
 
-    const optimisticCommentId = crypto.randomUUID();
+    const commentId = crypto.randomUUID();
     const now = new Date().toISOString();
-
-    upsertComment({
-      id: optimisticCommentId,
-      postId,
-      spaceId: space.id,
-      authorId: session.user.id,
-      bodyRichText: richTextFromPlainText(trimmed),
-      createdAt: now,
-      updatedAt: now,
-    });
 
     setCommentText("");
 
     try {
-      const result = await createCommentRequest({
-        id: optimisticCommentId,
-        postId,
-        bodyRichText: richTextFromPlainText(trimmed),
-      });
-      upsertComment(result.comment);
-    } catch (unknownError) {
-      removeComment(optimisticCommentId);
+      const tx = commentsCollection.insert(
+        {
+          id: commentId,
+          postId,
+          spaceId: space.id,
+          authorId: session.user.id,
+          bodyRichText: richTextFromPlainText(trimmed),
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          metadata: {
+            source: "user",
+            action: "create-comment",
+          },
+        },
+      );
 
+      await tx.isPersisted.promise;
+    } catch (unknownError) {
       if (unknownError instanceof PostsApiError && unknownError.code === "membership_required") {
         setActionError("Join the space before commenting.");
       } else {

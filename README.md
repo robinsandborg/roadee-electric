@@ -42,6 +42,7 @@ pnpm dev
    - `BETTER_AUTH_URL` (must match your app URL for OAuth callback correctness)
 4. Apply posts SQL migration(s):
    - `db/migrations/002_v2_posts_threads.sql`
+   - `db/migrations/003_v3_post_tags_space_scope.sql`
 5. Electric shape proxy routes used by local-first sync:
    - `/api/electric/shapes/posts`
    - `/api/electric/shapes/comments`
@@ -49,6 +50,8 @@ pnpm dev
    - `/api/electric/shapes/categories`
    - `/api/electric/shapes/tags`
    - `/api/electric/shapes/post-tags`
+6. Live sync behavior:
+   - the client hydrates once, then uses long-lived Electric shape streams (no interval polling when Electric is enabled).
 
 # Building For Production
 

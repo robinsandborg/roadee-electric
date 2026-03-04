@@ -1,6 +1,7 @@
 import {
   HeadContent,
   Scripts,
+  Link,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
@@ -43,6 +44,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
   }),
+  notFoundComponent: () => (
+    <main className="mx-auto w-full max-w-3xl px-6 py-20">
+      <h1 className="text-3xl font-semibold tracking-tight">Page not found</h1>
+      <p className="mt-3 text-sm text-[color:var(--muted)]">
+        The page you requested does not exist.
+      </p>
+      <div className="mt-6">
+        <Link className="btn-primary" to="/">
+          Back to home
+        </Link>
+      </div>
+    </main>
+  ),
   shellComponent: RootDocument,
 })
 

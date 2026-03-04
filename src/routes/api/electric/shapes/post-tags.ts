@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchElectricShapeRows, quoteSqlLiteral } from "#/lib/electric/shape.server";
+import {
+  fetchElectricShapeRows,
+  isElectricShapeProtocolRequest,
+  proxyElectricShapeRequest,
+} from "#/lib/electric/shape.server";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -17,6 +21,29 @@ export const Route = createFileRoute("/api/electric/shapes/post-tags")({
         try {
           const user = await requireSessionUser(request);
           const spaceIds = await resolveScopedSpaceIdsFromShapeRequest(request, user.id);
+          const isShapeProtocolRequest = isElectricShapeProtocolRequest(request);
+          const where =
+            spaceIds.length === 0 ? "1 = 0" : shapeWhereBySpaceIds("space_id", spaceIds);
+
+          if (isShapeProtocolRequest) {
+            if (!isElectricShapeBackendEnabled() || !(await isPostsSchemaAvailable())) {
+              return Response.json(
+                {
+                  code: "electric_unavailable",
+                  message: "Electric shape streaming is not available.",
+                },
+                { status: 503 },
+              );
+            }
+
+            return proxyElectricShapeRequest({
+              request,
+              table: "post_tags",
+              where,
+              columns: "id,post_id,tag_id,space_id",
+            });
+          }
+
           if (spaceIds.length === 0) {
             return Response.json({ rows: [] }, { status: 200 });
           }
@@ -27,23 +54,6 @@ export const Route = createFileRoute("/api/electric/shapes/post-tags")({
 
           if (isElectricShapeBackendEnabled()) {
             try {
-              // Electric where-clause parser does not support subqueries.
-              const postRows = await fetchElectricShapeRows({
-                table: "posts",
-                where: shapeWhereBySpaceIds("space_id", spaceIds),
-              });
-              const postIds = Array.from(
-                new Set(
-                  postRows
-                    .map((row) => (typeof row.id === "string" ? row.id : null))
-                    .filter((value): value is string => Boolean(value)),
-                ),
-              );
-              if (postIds.length === 0) {
-                return Response.json({ rows: [] }, { status: 200 });
-              }
-
-              const where = `post_id IN (${postIds.map(quoteSqlLiteral).join(",")})`;
               const rows = await fetchElectricShapeRows({
                 table: "post_tags",
                 where,
@@ -86,5 +96,6 @@ function mapElectricPostTagRow(row: Record<string, unknown>): PostTagRecord {
     id: String(row.id ?? ""),
     postId: String(row.post_id ?? ""),
     tagId: String(row.tag_id ?? ""),
+    spaceId: row.space_id == null ? null : String(row.space_id),
   };
 }

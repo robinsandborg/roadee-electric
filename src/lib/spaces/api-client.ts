@@ -12,16 +12,14 @@ export class SpacesApiError extends Error {
   }
 }
 
-type SpaceSnapshot = {
-  spaces: Space[];
-  memberships: Membership[];
-};
-
-export async function fetchVisibleSpacesSnapshot(): Promise<SpaceSnapshot> {
-  return requestJson<SpaceSnapshot>("/api/spaces", {
-    method: "GET",
-  });
-}
+const joinRequestInFlight = new Map<
+  string,
+  Promise<{
+    space: Space;
+    membership: Membership;
+    created: boolean;
+  }>
+>();
 
 export async function createSpaceRequest(input: {
   id: string;
@@ -47,10 +45,25 @@ export async function joinSpaceBySlugRequest(input: {
   membership: Membership;
   created: boolean;
 }> {
-  return requestJson("/api/spaces/join", {
+  const key = input.spaceSlug.trim().toLowerCase();
+  const inFlight = joinRequestInFlight.get(key);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const request = requestJson<{
+    space: Space;
+    membership: Membership;
+    created: boolean;
+  }>("/api/spaces/join", {
     method: "POST",
     body: JSON.stringify(input),
+  }).finally(() => {
+    joinRequestInFlight.delete(key);
   });
+
+  joinRequestInFlight.set(key, request);
+  return request;
 }
 
 export async function fetchMembersForSpace(spaceSlug: string): Promise<{

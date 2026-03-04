@@ -77,6 +77,7 @@ type PostTagRow = {
   id: string;
   post_id: string;
   tag_id: string;
+  space_id: string | null;
 };
 
 export async function createPostInDb(
@@ -138,6 +139,7 @@ export async function createPostInDb(
 
     const postTags = await replacePostTags(client, {
       postId,
+      spaceId: space.id,
       tagIds,
     });
 
@@ -216,6 +218,7 @@ export async function updateOwnPostInDb(
 
     const postTags = await replacePostTags(client, {
       postId: input.postId,
+      spaceId: existing.space_id,
       tagIds,
     });
 
@@ -599,10 +602,9 @@ export async function listPostsShapeRowsForSpaceIdsFromDb(
       ),
       pool.query<PostTagRow>(
         `
-          SELECT pt.id, pt.post_id, pt.tag_id
-          FROM post_tags AS pt
-          INNER JOIN posts AS p ON p.id = pt.post_id
-          WHERE p.space_id = ANY($1::text[])
+          SELECT id, post_id, tag_id, space_id
+          FROM post_tags
+          WHERE space_id = ANY($1::text[])
         `,
         [spaceIds],
       ),
@@ -781,7 +783,7 @@ async function resolveTaxonomyForMutation(
 
 async function replacePostTags(
   client: PoolClient,
-  input: { postId: string; tagIds: string[] },
+  input: { postId: string; spaceId: string; tagIds: string[] },
 ): Promise<PostTagRecord[]> {
   await client.query(
     `
@@ -799,11 +801,11 @@ async function replacePostTags(
   for (const tagId of input.tagIds) {
     const result = await client.query<PostTagRow>(
       `
-        INSERT INTO post_tags (id, post_id, tag_id)
-        VALUES ($1, $2, $3)
-        RETURNING id, post_id, tag_id
+        INSERT INTO post_tags (id, post_id, tag_id, space_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, post_id, tag_id, space_id
       `,
-      [crypto.randomUUID(), input.postId, tagId],
+      [crypto.randomUUID(), input.postId, tagId, input.spaceId],
     );
     inserted.push(mapPostTagRow(result.rows[0]!));
   }
@@ -1005,5 +1007,6 @@ function mapPostTagRow(row: PostTagRow): PostTagRecord {
     id: row.id,
     postId: row.post_id,
     tagId: row.tag_id,
+    spaceId: row.space_id,
   };
 }

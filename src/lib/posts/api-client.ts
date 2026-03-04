@@ -1,5 +1,5 @@
 import type { Comment, Post, PostTag, PostUpvote } from "#/db-collections";
-import type { FeedItem, PostThread, PostsSnapshot } from "#/lib/posts/types";
+import type { PostThread, PostsSnapshot } from "#/lib/posts/types";
 
 export class PostsApiError extends Error {
   status: number;
@@ -11,23 +11,6 @@ export class PostsApiError extends Error {
     this.status = status;
     this.code = code;
   }
-}
-
-export type PostsSpaceFeedPayload = {
-  spaceId: string;
-  feed: FeedItem[];
-  categories: PostsSnapshot["categories"];
-  tags: PostsSnapshot["tags"];
-  snapshot: PostsSnapshot;
-};
-
-export async function fetchPostsSpaceFeed(spaceSlug: string): Promise<PostsSpaceFeedPayload> {
-  return requestJson<PostsSpaceFeedPayload>(
-    `/api/posts?spaceSlug=${encodeURIComponent(spaceSlug)}`,
-    {
-      method: "GET",
-    },
-  );
 }
 
 export async function createPostRequest(input: {

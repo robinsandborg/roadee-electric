@@ -6,25 +6,18 @@ import {
   membershipsCollection,
   postTagsCollection,
   postsCollection,
-  removePostTag,
   spacesCollection,
   tagsCollection,
   upsertMembership,
-  upsertPost,
-  upsertPostTag,
   upsertSpace,
 } from "#/db-collections";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
-import { usePostsSync } from "#/hooks/use-posts-sync";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 import {
   plainTextFromRichText,
   richTextFromPlainText,
-  updateOwnPostRequest,
   uploadPostImageRequest,
 } from "#/lib/posts/api-client";
-import { replacePostTagsForPost } from "#/lib/posts/local-collections";
 import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId/edit")({
@@ -52,9 +45,6 @@ function EditPostRoute() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
-  usePostsSync(Boolean(session?.user), normalizedSpaceSlug);
 
   const { data: spaceRows } = useLiveQuery(
     (query) =>
@@ -131,14 +121,19 @@ function EditPostRoute() {
   );
 
   const { data: postTagRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ postTag: postTagsCollection })
-        .where(({ postTag }) => eq(postTag.postId, postId))
+        .where(({ postTag }) => and(eq(postTag.postId, postId), eq(postTag.spaceId, space.id)))
         .select(({ postTag }) => ({
           ...postTag,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
   );
 
   const tagNameSuggestions = useMemo(
@@ -238,60 +233,40 @@ function EditPostRoute() {
 
     setError(null);
     setIsSaving(true);
-
-    const previousPost = { ...post };
-    const previousPostTags = [...(postTagRows ?? [])];
-
-    upsertPost({
-      ...post,
-      title: trimmedTitle,
-      bodyRichText: richTextFromPlainText(trimmedBody),
-      imageUrl: imageUrl || null,
-      imageMeta,
-      categoryId: categoryId || null,
-      updatedAt: new Date().toISOString(),
-    });
-
-    for (const [postTagId, currentPostTag] of postTagsCollection.entries()) {
-      if (currentPostTag.postId === post.id) {
-        removePostTag(String(postTagId));
-      }
-    }
-
-    for (const tagId of selectedTagIds) {
-      upsertPostTag({
-        id: crypto.randomUUID(),
-        postId: post.id,
-        tagId,
-      });
-    }
+    const tagNames = newTagNames
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0 && !tagNameSuggestions.has(value));
 
     try {
-      const updated = await updateOwnPostRequest({
-        postId: post.id,
-        title: trimmedTitle,
-        bodyRichText: richTextFromPlainText(trimmedBody),
-        imageUrl: imageUrl || null,
-        imageMeta,
-        categoryId: categoryId || null,
-        categoryName: categoryId ? null : newCategoryName.trim() || null,
-        tagIds: selectedTagIds,
-        tagNames: newTagNames
-          .split(",")
-          .map((value) => value.trim())
-          .filter((value) => value.length > 0 && !tagNameSuggestions.has(value)),
-      });
+      const tx = postsCollection.update(
+        post.id,
+        {
+          metadata: {
+            source: "user",
+            action: "update-post",
+            categoryName: categoryId ? null : newCategoryName.trim() || null,
+            tagIds: selectedTagIds,
+            tagNames,
+          },
+        },
+        (draft) => {
+          draft.title = trimmedTitle;
+          draft.bodyRichText = richTextFromPlainText(trimmedBody);
+          draft.imageUrl = imageUrl || null;
+          draft.imageMeta = imageMeta;
+          draft.categoryId = categoryId || null;
+          draft.updatedAt = new Date().toISOString();
+        },
+      );
 
-      upsertPost(updated.post);
-      replacePostTagsForPost(updated.post.id, updated.postTags);
+      await tx.isPersisted.promise;
 
       await navigate({
-        to: appRoutes.postById(normalizedSpaceSlug, updated.post.id).to,
-        params: appRoutes.postById(normalizedSpaceSlug, updated.post.id).params,
+        to: appRoutes.postById(normalizedSpaceSlug, post.id).to,
+        params: appRoutes.postById(normalizedSpaceSlug, post.id).params,
       });
     } catch {
-      upsertPost(previousPost);
-      replacePostTagsForPost(post.id, previousPostTags);
       setError("Could not save changes.");
     } finally {
       setIsSaving(false);

@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import { and, eq, useLiveQuery } from "@tanstack/react-db";
 import { useEffect, useMemo, useState } from "react";
 import PostCard from "#/components/posts/PostCard";
@@ -9,20 +9,16 @@ import {
   postTagsCollection,
   postsCollection,
   postUpvotesCollection,
-  removePostUpvote,
   spacesCollection,
   tagsCollection,
   upsertMembership,
-  upsertPostUpvote,
   upsertSpace,
+  type Membership,
+  type Space,
   type Tag,
 } from "#/db-collections";
-import { useSpacesSync } from "#/hooks/use-spaces-sync";
-import { usePostsSync } from "#/hooks/use-posts-sync";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
-import { reconcileUpvotesForPostUser } from "#/lib/posts/local-collections";
-import { toggleUpvoteRequest } from "#/lib/posts/api-client";
 import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug")({
@@ -34,15 +30,24 @@ type Provider = "google" | "github";
 function SpaceRoute() {
   const { spaceSlug } = Route.useParams();
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
+  const location = useLocation();
+
+  if (!isSpaceFeedPath(location.pathname, normalizedSpaceSlug)) {
+    return <Outlet />;
+  }
+
+  return <SpaceFeed normalizedSpaceSlug={normalizedSpaceSlug} />;
+}
+
+function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
   const { data: session, isPending } = authClient.useSession();
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
   const [joinStatus, setJoinStatus] = useState<"idle" | "joining" | "ready" | "not-found">("idle");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
   const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
-
-  useSpacesSync(Boolean(session?.user));
-  usePostsSync(Boolean(session?.user && joinStatus !== "not-found"), normalizedSpaceSlug);
+  const [joinedSpace, setJoinedSpace] = useState<Space | null>(null);
+  const [joinedMembership, setJoinedMembership] = useState<Membership | null>(null);
 
   const { data: spaceRows } = useLiveQuery(
     (query) =>
@@ -154,14 +159,26 @@ function SpaceRoute() {
     [space?.id],
   );
 
-  const { data: postTagRows } = useLiveQuery((query) =>
-    query.from({ postTag: postTagsCollection }).select(({ postTag }) => ({
-      ...postTag,
-    })),
+  const { data: postTagRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ postTag: postTagsCollection })
+        .where(({ postTag }) => eq(postTag.spaceId, space.id))
+        .select(({ postTag }) => ({
+          ...postTag,
+        }));
+    },
+    [space?.id],
   );
 
   const myMembership = myMembershipRows?.[0];
-  const canManageMembers = myMembership?.role === "owner" || myMembership?.role === "staff";
+  const activeSpace = space ?? joinedSpace;
+  const activeMembership = myMembership ?? joinedMembership;
+  const canManageMembers = activeMembership?.role === "owner" || activeMembership?.role === "staff";
 
   const feed = useMemo(() => {
     if (!session?.user || !postRows) {
@@ -218,6 +235,12 @@ function SpaceRoute() {
       return;
     }
 
+    if (activeSpace && activeMembership) {
+      setJoinStatus("ready");
+      setJoinError(null);
+      return;
+    }
+
     let cancelled = false;
     setJoinStatus("joining");
     setJoinError(null);
@@ -235,6 +258,8 @@ function SpaceRoute() {
 
         upsertSpace(result.space);
         upsertMembership(result.membership);
+        setJoinedSpace(result.space);
+        setJoinedMembership(result.membership);
         setJoinStatus("ready");
       } catch (error) {
         if (cancelled) {
@@ -256,7 +281,7 @@ function SpaceRoute() {
     return () => {
       cancelled = true;
     };
-  }, [normalizedSpaceSlug, session?.user?.id]);
+  }, [activeMembership, activeSpace, normalizedSpaceSlug, session?.user?.id]);
 
   const onToggleUpvote = async (postId: string) => {
     if (!session?.user?.id || !space?.id) {
@@ -266,39 +291,31 @@ function SpaceRoute() {
     setPostActionError(null);
     setTogglingPostId(postId);
 
-    const existing = (upvoteRows ?? []).filter(
+    const existingRows = (upvoteRows ?? []).filter(
       (upvote) => upvote.postId === postId && upvote.userId === session.user.id,
     );
-
-    let optimistic: { id: string } | null = null;
-
-    for (const row of existing) {
-      removePostUpvote(row.id);
-    }
-
-    if (existing.length === 0) {
-      optimistic = { id: `optimistic-upvote-${crypto.randomUUID()}` };
-      upsertPostUpvote({
-        id: optimistic.id,
-        postId,
-        spaceId: space.id,
-        userId: session.user.id,
-        createdAt: new Date().toISOString(),
-      });
-    }
+    const existing = existingRows[0];
 
     try {
-      const result = await toggleUpvoteRequest({ postId });
-      reconcileUpvotesForPostUser(postId, session.user.id, result.upvote);
+      const tx = existing
+        ? postUpvotesCollection.delete(existing.id, {
+            metadata: { source: "user", action: "toggle-upvote-off" },
+          })
+        : postUpvotesCollection.insert(
+            {
+              id: `optimistic-upvote-${crypto.randomUUID()}`,
+              postId,
+              spaceId: space.id,
+              userId: session.user.id,
+              createdAt: new Date().toISOString(),
+            },
+            {
+              metadata: { source: "user", action: "toggle-upvote-on" },
+            },
+          );
+
+      await tx.isPersisted.promise;
     } catch {
-      if (optimistic) {
-        removePostUpvote(optimistic.id);
-      }
-
-      for (const row of existing) {
-        upsertPostUpvote(row);
-      }
-
       setPostActionError("Could not update upvote.");
     } finally {
       setTogglingPostId(null);
@@ -378,26 +395,40 @@ function SpaceRoute() {
     );
   }
 
+  if (!activeSpace || !activeMembership || joinStatus !== "ready") {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <p className="island-kicker mb-2">Space Join</p>
+          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+            Joining {normalizedSpaceSlug}...
+          </h1>
+          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+            {joinError ?? "Checking membership and loading space data."}
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker mb-2">Space Feed</p>
         <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-          {space?.name ?? normalizedSpaceSlug}
+          {activeSpace.name}
         </h1>
         <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-          {space?.description ?? "Joining space..."}
+          {activeSpace.description}
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
-            {joinStatus === "joining" ? "joining" : "joined"}
+            joined
           </span>
-          {myMembership ? (
-            <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
-              role: {myMembership.role}
-            </span>
-          ) : null}
+          <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+            role: {activeMembership.role}
+          </span>
         </div>
 
         {joinError ? (
@@ -416,7 +447,7 @@ function SpaceRoute() {
           <Link
             to={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).to}
             params={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).params}
-            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-4 py-2 text-sm font-semibold text-white no-underline"
+            className="inline-flex rounded-full border px-4 py-2 text-sm font-semibold text-white no-underline"
           >
             New post
           </Link>
@@ -463,6 +494,11 @@ function SpaceRoute() {
       </section>
     </main>
   );
+}
+
+function isSpaceFeedPath(pathname: string, spaceSlug: string): boolean {
+  const normalizedPath = pathname.replace(/\/+$/, "");
+  return normalizedPath === `/s/${spaceSlug}`;
 }
 
 async function signInWithProvider(

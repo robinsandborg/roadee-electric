@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchElectricShapeRows } from "#/lib/electric/shape.server";
+import {
+  fetchElectricShapeRows,
+  isElectricShapeProtocolRequest,
+  proxyElectricShapeRequest,
+} from "#/lib/electric/shape.server";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -17,6 +21,29 @@ export const Route = createFileRoute("/api/electric/shapes/tags")({
         try {
           const user = await requireSessionUser(request);
           const spaceIds = await resolveScopedSpaceIdsFromShapeRequest(request, user.id);
+          const isShapeProtocolRequest = isElectricShapeProtocolRequest(request);
+          const where =
+            spaceIds.length === 0 ? "1 = 0" : shapeWhereBySpaceIds("space_id", spaceIds);
+
+          if (isShapeProtocolRequest) {
+            if (!isElectricShapeBackendEnabled() || !(await isPostsSchemaAvailable())) {
+              return Response.json(
+                {
+                  code: "electric_unavailable",
+                  message: "Electric shape streaming is not available.",
+                },
+                { status: 503 },
+              );
+            }
+
+            return proxyElectricShapeRequest({
+              request,
+              table: "tags",
+              where,
+              columns: "id,space_id,name,created_at",
+            });
+          }
+
           if (spaceIds.length === 0) {
             return Response.json({ rows: [] }, { status: 200 });
           }
@@ -29,7 +56,7 @@ export const Route = createFileRoute("/api/electric/shapes/tags")({
             try {
               const rows = await fetchElectricShapeRows({
                 table: "tags",
-                where: shapeWhereBySpaceIds("space_id", spaceIds),
+                where,
               });
 
               return Response.json({ rows: rows.map(mapElectricTagRow) }, { status: 200 });

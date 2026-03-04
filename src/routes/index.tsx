@@ -3,6 +3,7 @@ import LandingHero from "#/components/landing/LandingHero";
 import JoinSpaceForm from "#/components/landing/JoinSpaceForm";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
+import { joinSpaceBySlugRequest } from "#/lib/spaces/api-client";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -83,6 +84,13 @@ function App() {
 
           <JoinSpaceForm
             onSubmit={(spaceSlug) => {
+              if (session?.user?.id) {
+                void joinSpaceBySlugRequest({
+                  membershipId: crypto.randomUUID(),
+                  spaceSlug,
+                });
+              }
+
               void navigate(appRoutes.spaceBySlug(spaceSlug));
             }}
           />
@@ -152,7 +160,13 @@ function App() {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <button type="button" className="landing-cta-primary landing-cta-primary--final">
+          <button
+            type="button"
+            className="landing-cta-primary landing-cta-primary--final"
+            onClick={() => {
+              void navigate({ to: appRoutes.createSpace });
+            }}
+          >
             Start your space for free
           </button>
         </div>

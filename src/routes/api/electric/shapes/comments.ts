@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchElectricShapeRows } from "#/lib/electric/shape.server";
+import {
+  fetchElectricShapeRows,
+  isElectricShapeProtocolRequest,
+  proxyElectricShapeRequest,
+} from "#/lib/electric/shape.server";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -17,6 +21,29 @@ export const Route = createFileRoute("/api/electric/shapes/comments")({
         try {
           const user = await requireSessionUser(request);
           const spaceIds = await resolveScopedSpaceIdsFromShapeRequest(request, user.id);
+          const isShapeProtocolRequest = isElectricShapeProtocolRequest(request);
+          const where =
+            spaceIds.length === 0 ? "1 = 0" : shapeWhereBySpaceIds("space_id", spaceIds);
+
+          if (isShapeProtocolRequest) {
+            if (!isElectricShapeBackendEnabled() || !(await isPostsSchemaAvailable())) {
+              return Response.json(
+                {
+                  code: "electric_unavailable",
+                  message: "Electric shape streaming is not available.",
+                },
+                { status: 503 },
+              );
+            }
+
+            return proxyElectricShapeRequest({
+              request,
+              table: "comments",
+              where,
+              columns: "id,post_id,space_id,author_id,body_rich_text,created_at,updated_at",
+            });
+          }
+
           if (spaceIds.length === 0) {
             return Response.json({ rows: [] }, { status: 200 });
           }
@@ -29,7 +56,7 @@ export const Route = createFileRoute("/api/electric/shapes/comments")({
             try {
               const rows = await fetchElectricShapeRows({
                 table: "comments",
-                where: shapeWhereBySpaceIds("space_id", spaceIds),
+                where,
               });
 
               return Response.json({ rows: rows.map(mapElectricCommentRow) }, { status: 200 });

@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   fetchElectricShapeRows,
+  isElectricShapeProtocolRequest,
   isElectricCloudConfigured,
+  proxyElectricShapeRequest,
   quoteSqlLiteral,
 } from "#/lib/electric/shape.server";
+import { resolveScopedSpaceIdsForUserFromDb } from "#/lib/posts/repository.server";
 import { requireSessionUser } from "#/lib/spaces/auth-session.server";
 import { listVisibleStateForUserFromDb } from "#/lib/spaces/repository.server";
 import type { SpaceRecord } from "#/lib/spaces/types";
@@ -14,26 +17,36 @@ export const Route = createFileRoute("/api/electric/shapes/spaces")({
       GET: async ({ request }) => {
         try {
           const user = await requireSessionUser(request);
+          const spaceIds = await resolveScopedSpaceIdsForUserFromDb({ userId: user.id });
+          const isShapeProtocolRequest = isElectricShapeProtocolRequest(request);
+          const where =
+            spaceIds.length === 0 ? "1 = 0" : `id IN (${spaceIds.map(quoteSqlLiteral).join(",")})`;
+
+          if (isShapeProtocolRequest) {
+            if (!isElectricCloudConfigured()) {
+              return Response.json(
+                {
+                  code: "electric_unavailable",
+                  message: "Electric shape streaming is not available.",
+                },
+                { status: 503 },
+              );
+            }
+
+            return proxyElectricShapeRequest({
+              request,
+              table: "spaces",
+              where,
+              columns: "id,slug,name,description,created_by,created_at,updated_at",
+            });
+          }
+
           if (isElectricCloudConfigured()) {
             try {
-              const ownMembershipRows = await fetchElectricShapeRows({
-                table: "memberships",
-                where: `user_id = ${quoteSqlLiteral(user.id)}`,
-              });
-
-              const spaceIds = Array.from(
-                new Set(
-                  ownMembershipRows
-                    .map((row) => (typeof row.space_id === "string" ? row.space_id : null))
-                    .filter((value): value is string => Boolean(value)),
-                ),
-              );
-
               if (spaceIds.length === 0) {
                 return Response.json({ rows: [] }, { status: 200 });
               }
 
-              const where = `id IN (${spaceIds.map(quoteSqlLiteral).join(",")})`;
               const spaceRows = await fetchElectricShapeRows({
                 table: "spaces",
                 where,

@@ -7,10 +7,20 @@
  */
 export function getElectricShapeProxyUrl(): string | null {
   const value = import.meta.env.VITE_ELECTRIC_SHAPE_PROXY_URL;
-  if (typeof value !== "string" || value.length === 0) {
+  if (typeof value !== "string" || value.trim().length === 0) {
     return null;
   }
-  return value;
+
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (typeof window !== "undefined") {
+    return new URL(trimmed, window.location.origin).toString();
+  }
+
+  return trimmed;
 }
 
 export function isElectricShapeSyncEnabled(): boolean {

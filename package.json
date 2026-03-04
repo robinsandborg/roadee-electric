@@ -12,10 +12,13 @@
     "test": "vitest run",
     "format-and-lint": "oxfmt --check . && oxlint .",
     "format-and-lint:fix": "oxfmt --write . && oxlint --fix .",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@electric-sql/client": "^1.5.10",
     "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/electric-db-collection": "^0.2.37",
     "@tanstack/query-db-collection": "^1.0.8",
     "@tanstack/react-db": "^0.1.1",
     "@tanstack/react-devtools": "^0.7.0",
