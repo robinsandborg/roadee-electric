@@ -54,11 +54,9 @@ export default function PostCard(props: PostCardProps) {
           disabled={props.isTogglingUpvote}
           className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 font-semibold text-[var(--sea-ink)] disabled:opacity-70"
         >
-          {props.isTogglingUpvote
-            ? "Updating..."
-            : props.item.hasUpvoted
-              ? `Upvoted (${props.item.upvoteCount})`
-              : `Upvote (${props.item.upvoteCount})`}
+          {props.item.hasUpvoted
+            ? `Upvoted (${props.item.upvoteCount})`
+            : `Upvote (${props.item.upvoteCount})`}
         </button>
 
         <Link
