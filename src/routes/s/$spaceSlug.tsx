@@ -343,15 +343,15 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Join</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Space not found
           </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+          <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
             No space exists for slug <code>{normalizedSpaceSlug}</code>.
           </p>
           <Link
             to={appRoutes.home}
-            className="mt-6 inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            className="mt-6 inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
           >
             Back to landing page
           </Link>
@@ -371,16 +371,16 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Feed</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Space not found
           </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+          <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
             No space exists for slug <code>{normalizedSpaceSlug}</code>.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               to={appRoutes.home}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
             >
               Back to landing page
             </Link>
@@ -394,25 +394,25 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker mb-2">Space Feed</p>
-        <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+        <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
           {activeSpace.name}
         </h1>
-        <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+        <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
           {activeSpace.description}
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {activeMembership ? (
             <>
-              <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+              <span className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 text-xs font-semibold uppercase">
                 joined
               </span>
-              <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+              <span className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 text-xs font-semibold uppercase">
                 role: {activeMembership.role}
               </span>
             </>
           ) : (
-            <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+            <span className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 text-xs font-semibold uppercase">
               public read-only
             </span>
           )}
@@ -431,7 +431,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
         ) : null}
 
         {!isSignedIn ? (
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             {isSessionChecking
               ? "Checking your session..."
               : "Sign in to join this space, create posts, comment, and upvote."}
@@ -443,7 +443,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             <button
               type="button"
               disabled
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] opacity-70"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink opacity-70"
             >
               Checking session...
             </button>
@@ -463,7 +463,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
                 onClick={() => {
                   void signInWithProvider("google", normalizedSpaceSlug, setPendingProvider);
                 }}
-                className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+                className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
               >
                 {pendingProvider === "google" ? "Connecting..." : "Continue with Google"}
               </button>
@@ -473,7 +473,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
                 onClick={() => {
                   void signInWithProvider("github", normalizedSpaceSlug, setPendingProvider);
                 }}
-                className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+                className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
               >
                 {pendingProvider === "github" ? "Connecting..." : "Continue with GitHub"}
               </button>
@@ -486,7 +486,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
               onClick={() => {
                 void join();
               }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
             >
               {joinStatus === "joining" ? "Joining..." : "Join space"}
             </button>
@@ -495,14 +495,14 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             <Link
               to={appRoutes.membersSettingsBySlug(normalizedSpaceSlug).to}
               params={appRoutes.membersSettingsBySlug(normalizedSpaceSlug).params}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
             >
               Manage members
             </Link>
           ) : null}
           <Link
             to={appRoutes.home}
-            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+            className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
           >
             Back to landing page
           </Link>
@@ -515,9 +515,9 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             <FeedCardSkeleton key={`feed-skeleton-${index}`} />
           ))
         ) : feed.length === 0 ? (
-          <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
-            <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">No posts yet</h2>
-            <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+          <article className="rounded-2xl border border-dashed border-chip-line bg-chip-bg p-6">
+            <h2 className="m-0 text-xl font-bold text-sea-ink">No posts yet</h2>
+            <p className="m-0 mt-2 text-sm leading-6 text-sea-ink-soft">
               Start the first thread for this space.
             </p>
           </article>
@@ -540,7 +540,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             <button
               type="button"
               onClick={() => setVisiblePostLimit((current) => current + INITIAL_VISIBLE_POST_COUNT)}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5"
             >
               Load more
             </button>
@@ -578,9 +578,9 @@ function SpaceFeedSkeleton() {
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker mb-2">Space Feed</p>
-        <div className="h-11 w-72 animate-pulse rounded-xl bg-[var(--chip-bg)]" />
-        <div className="mt-3 h-5 w-full max-w-3xl animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-        <div className="mt-6 h-8 w-40 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+        <div className="h-11 w-72 animate-pulse rounded-xl bg-chip-bg" />
+        <div className="mt-3 h-5 w-full max-w-3xl animate-pulse rounded-lg bg-chip-bg" />
+        <div className="mt-6 h-8 w-40 animate-pulse rounded-full bg-chip-bg" />
       </section>
 
       <section className="mt-6 grid gap-4">
@@ -594,14 +594,14 @@ function SpaceFeedSkeleton() {
 
 function FeedCardSkeleton() {
   return (
-    <article className="rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5 shadow-[var(--island-shadow)]">
-      <div className="h-5 w-24 animate-pulse rounded-full bg-[var(--chip-bg)]" />
-      <div className="mt-3 h-7 w-3/4 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-      <div className="mt-3 h-4 w-full animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-      <div className="mt-2 h-4 w-5/6 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+    <article className="rounded-2xl border border-chip-line bg-island-bg p-5 shadow-island-shadow">
+      <div className="h-5 w-24 animate-pulse rounded-full bg-chip-bg" />
+      <div className="mt-3 h-7 w-3/4 animate-pulse rounded-lg bg-chip-bg" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded-lg bg-chip-bg" />
+      <div className="mt-2 h-4 w-5/6 animate-pulse rounded-lg bg-chip-bg" />
       <div className="mt-5 flex gap-3">
-        <div className="h-7 w-24 animate-pulse rounded-full bg-[var(--chip-bg)]" />
-        <div className="h-7 w-28 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+        <div className="h-7 w-24 animate-pulse rounded-full bg-chip-bg" />
+        <div className="h-7 w-28 animate-pulse rounded-full bg-chip-bg" />
       </div>
     </article>
   );

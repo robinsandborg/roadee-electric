@@ -27,8 +27,8 @@ export default function LandingHero() {
             className="landing-proof-card rise-in rounded-2xl px-4 py-3"
             style={{ animationDelay: `${110 + index * 85}ms` }}
           >
-            <p className="m-0 text-sm font-semibold text-[var(--sea-ink)]">{title}</p>
-            <p className="m-0 mt-1 text-sm text-[var(--landing-copy-muted)]">{body}</p>
+            <p className="m-0 text-sm font-semibold text-sea-ink">{title}</p>
+            <p className="m-0 mt-1 text-sm text-landing-copy-muted">{body}</p>
           </article>
         ))}
       </div>

@@ -14,10 +14,10 @@ export default function JoinSpaceForm({ onSubmit }: JoinSpaceFormProps) {
   return (
     <section className="landing-panel rounded-[1.9rem] p-6 sm:p-7">
       <p className="landing-kicker">Join Existing Space</p>
-      <h2 className="mt-2 text-2xl font-black text-[var(--sea-ink)]">
+      <h2 className="mt-2 text-2xl font-black text-sea-ink">
         Already have an invite link?
       </h2>
-      <p className="mt-2 mb-0 text-sm text-[var(--landing-copy-muted)]">
+      <p className="mt-2 mb-0 text-sm text-landing-copy-muted">
         Paste a full link or enter a slug like <code>acme-product</code>.
       </p>
 

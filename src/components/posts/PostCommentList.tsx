@@ -8,7 +8,7 @@ type PostCommentListProps = {
 export default function PostCommentList(props: PostCommentListProps) {
   if (props.comments.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-5 text-sm text-[var(--sea-ink-soft)]">
+      <div className="rounded-xl border border-dashed border-chip-line bg-chip-bg px-4 py-5 text-sm text-sea-ink-soft">
         No comments yet. Start the thread.
       </div>
     );
@@ -19,12 +19,12 @@ export default function PostCommentList(props: PostCommentListProps) {
       {props.comments.map((comment) => (
         <article
           key={comment.id}
-          className="rounded-xl border border-[var(--chip-line)] bg-[var(--chip-bg)] p-3"
+          className="rounded-xl border border-chip-line bg-chip-bg p-3"
         >
-          <div className="text-xs text-[var(--sea-ink-soft)]">
+          <div className="text-xs text-sea-ink-soft">
             <code>{comment.authorId}</code>
           </div>
-          <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink)]">
+          <p className="m-0 mt-2 text-sm leading-6 text-sea-ink">
             {plainTextFromRichText(comment.bodyRichText) || "(empty comment)"}
           </p>
         </article>

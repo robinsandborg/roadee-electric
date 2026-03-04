@@ -97,7 +97,7 @@ function MembersSettingsRoute() {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Members</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Loading...
           </h1>
         </section>
@@ -110,10 +110,10 @@ function MembersSettingsRoute() {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Members</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Sign in required
           </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+          <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
             Authenticate to manage this space.
           </p>
         </section>
@@ -125,10 +125,10 @@ function MembersSettingsRoute() {
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker mb-2">Members</p>
-        <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+        <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
           {space?.name ?? normalizedSpaceSlug}
         </h1>
-        <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+        <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
           Promote colleagues to staff.
         </p>
 
@@ -140,10 +140,10 @@ function MembersSettingsRoute() {
         ) : null}
 
         {!error ? (
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--chip-line)]">
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-chip-line">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="bg-[var(--chip-bg)] text-left text-xs uppercase">
+                <tr className="bg-chip-bg text-left text-xs uppercase">
                   <th className="px-4 py-3 font-semibold">User</th>
                   <th className="px-4 py-3 font-semibold">Role</th>
                   <th className="px-4 py-3 font-semibold">Action</th>
@@ -155,12 +155,12 @@ function MembersSettingsRoute() {
                     canPromote && member.role === "user" && member.userId !== session.user.id;
 
                   return (
-                    <tr key={member.id} className="border-t border-[var(--chip-line)] text-sm">
+                    <tr key={member.id} className="border-t border-chip-line text-sm">
                       <td className="px-4 py-3">
                         <code>{member.userId}</code>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-2 py-1 text-xs font-semibold uppercase">
+                        <span className="rounded-full border border-chip-line bg-chip-bg px-2 py-1 text-xs font-semibold uppercase">
                           {member.role}
                         </span>
                       </td>
@@ -178,14 +178,14 @@ function MembersSettingsRoute() {
                                 setError,
                               );
                             }}
-                            className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-[var(--sea-ink)]"
+                            className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 text-xs font-semibold text-sea-ink"
                           >
                             {promotingUserId === member.userId
                               ? "Promoting..."
                               : "Promote to staff"}
                           </button>
                         ) : (
-                          <span className="text-xs text-[var(--sea-ink-soft)]">No action</span>
+                          <span className="text-xs text-sea-ink-soft">No action</span>
                         )}
                       </td>
                     </tr>
@@ -200,13 +200,13 @@ function MembersSettingsRoute() {
           <Link
             to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
             params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
-            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
           >
             Back to space
           </Link>
           <Link
             to={appRoutes.home}
-            className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
           >
             Back to landing page
           </Link>

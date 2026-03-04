@@ -70,16 +70,6 @@ export async function joinSpaceBySlugRequest(input: {
   return request;
 }
 
-export async function fetchMembersForSpace(spaceSlug: string): Promise<{
-  space: Space;
-  memberships: Membership[];
-  actorRole: "owner" | "staff" | "user";
-}> {
-  return requestJson(`/api/spaces/${encodeURIComponent(spaceSlug)}/members`, {
-    method: "GET",
-  });
-}
-
 export async function promoteMemberToStaffRequest(input: {
   spaceSlug: string;
   targetUserId: string;
@@ -91,35 +81,6 @@ export async function promoteMemberToStaffRequest(input: {
     return await trpc.spaces.promote.mutate(input);
   } catch (error) {
     throw mapTrpcError(error);
-  }
-}
-
-async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
-  const headers = new Headers(init.headers);
-  headers.set("content-type", "application/json");
-
-  const response = await fetch(url, {
-    ...init,
-    headers,
-  });
-
-  const payload = (await safeJson(response)) as { code?: string; message?: string } & T;
-  if (!response.ok) {
-    throw new SpacesApiError(
-      payload.message ?? "Request failed",
-      response.status,
-      payload.code ?? "request_failed",
-    );
-  }
-
-  return payload;
-}
-
-async function safeJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return {};
   }
 }
 

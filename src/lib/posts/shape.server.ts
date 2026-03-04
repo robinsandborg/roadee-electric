@@ -7,7 +7,7 @@ import { requireSessionUser, type SessionUser } from "#/lib/spaces/auth-session.
 const SCOPED_SPACE_IDS_CACHE_TTL_MS = 10_000;
 const scopedSpaceIdsCache = new Map<string, { expiresAt: number; spaceIds: string[] }>();
 
-export type ShapeScope = {
+type ShapeScope = {
   user: SessionUser | null;
   spaceIds: string[];
 };
@@ -34,7 +34,7 @@ export async function resolveShapeScope(
   };
 }
 
-export async function resolveScopedSpaceIdsFromShapeRequest(
+async function resolveScopedSpaceIdsFromShapeRequest(
   request: Request,
   userId: string,
 ): Promise<string[]> {
@@ -66,7 +66,7 @@ export function invalidateScopedSpaceIdsCacheForUser(userId: string): void {
   }
 }
 
-export function quoteSqlLiteral(value: string): string {
+function quoteSqlLiteral(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
 }
 

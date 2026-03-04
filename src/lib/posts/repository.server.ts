@@ -571,7 +571,7 @@ export async function resolveSpaceIdsBySlugFromDb(input: { spaceSlug: string }):
   return result.rows.map((row) => row.id);
 }
 
-export async function listPostsShapeRowsForSpaceIdsFromDb(
+async function listPostsShapeRowsForSpaceIdsFromDb(
   spaceIds: string[],
 ): Promise<PostsSnapshot> {
   if (spaceIds.length === 0) {

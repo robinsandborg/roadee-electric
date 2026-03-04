@@ -342,10 +342,10 @@ function PostDetailRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">
             Space not found
           </h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             No space exists for <code>{normalizedSpaceSlug}</code>.
           </p>
         </section>
@@ -363,17 +363,17 @@ function PostDetailRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">
             Space not found
           </h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             No space exists for <code>{normalizedSpaceSlug}</code>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
               params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
             >
               Back to space
             </Link>
@@ -392,14 +392,14 @@ function PostDetailRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Post not found</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Post not found</h1>
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             The requested thread does not exist in this space.
           </p>
           <Link
             to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
             params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
-            className="mt-4 inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+            className="mt-4 inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
           >
             Back to feed
           </Link>
@@ -414,7 +414,7 @@ function PostDetailRoute() {
         <Link
           to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
           params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
-          className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+          className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
         >
           Back to feed
         </Link>
@@ -431,10 +431,10 @@ function PostDetailRoute() {
           }}
         />
 
-        <section className="rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
-          <h2 className="m-0 text-lg font-bold text-[var(--sea-ink)]">Comments</h2>
+        <section className="rounded-2xl border border-chip-line bg-island-bg p-5">
+          <h2 className="m-0 text-lg font-bold text-sea-ink">Comments</h2>
           {!isSignedIn ? (
-            <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            <p className="m-0 mt-2 text-sm text-sea-ink-soft">
               {isSessionChecking
                 ? "Checking your session..."
                 : "Sign in to join this space and leave comments."}
@@ -454,12 +454,12 @@ function PostDetailRoute() {
                     ? "Write your comment"
                     : "Sign in to comment"
               }
-              className="rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 py-3 text-sm text-[var(--sea-ink)] outline-none"
+              className="rounded-xl border border-chip-line bg-white/80 px-4 py-3 text-sm text-sea-ink outline-none"
             />
             <button
               type="submit"
               disabled={!isSignedIn || isSessionChecking || isSendingComment}
-              className="w-fit rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
+              className="w-fit rounded-full border border-chip-line bg-sea-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
             >
               {isSendingComment ? "Sending..." : "Comment"}
             </button>
@@ -484,21 +484,21 @@ function PostThreadSkeleton({ message }: { message: string }) {
   return (
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
-        <div className="h-10 w-80 animate-pulse rounded-xl bg-[var(--chip-bg)]" />
-        <p className="m-0 mt-3 text-sm text-[var(--sea-ink-soft)]">{message}</p>
+        <div className="h-10 w-80 animate-pulse rounded-xl bg-chip-bg" />
+        <p className="m-0 mt-3 text-sm text-sea-ink-soft">{message}</p>
       </section>
 
-      <section className="mt-4 rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
-        <div className="h-6 w-28 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-        <div className="mt-4 h-8 w-3/4 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-        <div className="mt-4 h-4 w-full animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-        <div className="mt-2 h-4 w-11/12 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+      <section className="mt-4 rounded-2xl border border-chip-line bg-island-bg p-5">
+        <div className="h-6 w-28 animate-pulse rounded-lg bg-chip-bg" />
+        <div className="mt-4 h-8 w-3/4 animate-pulse rounded-lg bg-chip-bg" />
+        <div className="mt-4 h-4 w-full animate-pulse rounded-lg bg-chip-bg" />
+        <div className="mt-2 h-4 w-11/12 animate-pulse rounded-lg bg-chip-bg" />
       </section>
 
-      <section className="mt-4 rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
-        <div className="h-6 w-24 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
-        <div className="mt-4 h-20 w-full animate-pulse rounded-xl bg-[var(--chip-bg)]" />
-        <div className="mt-3 h-9 w-28 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+      <section className="mt-4 rounded-2xl border border-chip-line bg-island-bg p-5">
+        <div className="h-6 w-24 animate-pulse rounded-lg bg-chip-bg" />
+        <div className="mt-4 h-20 w-full animate-pulse rounded-xl bg-chip-bg" />
+        <div className="mt-3 h-9 w-28 animate-pulse rounded-full bg-chip-bg" />
       </section>
     </main>
   );

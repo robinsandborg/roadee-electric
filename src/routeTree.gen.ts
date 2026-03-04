@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpacesNewRouteImport } from './routes/spaces/new'
+import { Route as SpacesMyRouteImport } from './routes/spaces/my'
 import { Route as SSpaceSlugRouteImport } from './routes/s/$spaceSlug'
 import { Route as ApiSpacesRouteImport } from './routes/api/spaces'
 import { Route as ApiPostsRouteImport } from './routes/api/posts'
@@ -51,6 +52,11 @@ const IndexRoute = IndexRouteImport.update({
 const SpacesNewRoute = SpacesNewRouteImport.update({
   id: '/spaces/new',
   path: '/spaces/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpacesMyRoute = SpacesMyRouteImport.update({
+  id: '/spaces/my',
+  path: '/spaces/my',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SSpaceSlugRoute = SSpaceSlugRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/api/posts': typeof ApiPostsRouteWithChildren
   '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
+  '/spaces/my': typeof SpacesMyRoute
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/api/posts': typeof ApiPostsRouteWithChildren
   '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
+  '/spaces/my': typeof SpacesMyRoute
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/api/posts': typeof ApiPostsRouteWithChildren
   '/api/spaces': typeof ApiSpacesRouteWithChildren
   '/s/$spaceSlug': typeof SSpaceSlugRouteWithChildren
+  '/spaces/my': typeof SpacesMyRoute
   '/spaces/new': typeof SpacesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/posts/$postId': typeof ApiPostsPostIdRouteWithChildren
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/spaces'
     | '/s/$spaceSlug'
+    | '/spaces/my'
     | '/spaces/new'
     | '/api/auth/$'
     | '/api/posts/$postId'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/spaces'
     | '/s/$spaceSlug'
+    | '/spaces/my'
     | '/spaces/new'
     | '/api/auth/$'
     | '/api/posts/$postId'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/api/posts'
     | '/api/spaces'
     | '/s/$spaceSlug'
+    | '/spaces/my'
     | '/spaces/new'
     | '/api/auth/$'
     | '/api/posts/$postId'
@@ -376,6 +388,7 @@ export interface RootRouteChildren {
   ApiPostsRoute: typeof ApiPostsRouteWithChildren
   ApiSpacesRoute: typeof ApiSpacesRouteWithChildren
   SSpaceSlugRoute: typeof SSpaceSlugRouteWithChildren
+  SpacesMyRoute: typeof SpacesMyRoute
   SpacesNewRoute: typeof SpacesNewRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       path: '/spaces/new'
       fullPath: '/spaces/new'
       preLoaderRoute: typeof SpacesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spaces/my': {
+      id: '/spaces/my'
+      path: '/spaces/my'
+      fullPath: '/spaces/my'
+      preLoaderRoute: typeof SpacesMyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/s/$spaceSlug': {
@@ -668,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPostsRoute: ApiPostsRouteWithChildren,
   ApiSpacesRoute: ApiSpacesRouteWithChildren,
   SSpaceSlugRoute: SSpaceSlugRouteWithChildren,
+  SpacesMyRoute: SpacesMyRoute,
   SpacesNewRoute: SpacesNewRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,

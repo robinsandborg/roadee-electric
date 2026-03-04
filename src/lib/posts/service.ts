@@ -17,7 +17,7 @@ import type {
   PostsSnapshot,
 } from "#/lib/posts/types";
 
-export type PostsServiceErrorCode =
+type PostsServiceErrorCode =
   | "invalid_input"
   | "space_not_found"
   | "post_not_found"

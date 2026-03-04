@@ -217,8 +217,8 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             Checking your session.
           </p>
         </section>
@@ -230,7 +230,7 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">
             Sign in required
           </h1>
         </section>
@@ -242,7 +242,7 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">
             Space not found
           </h1>
         </section>
@@ -254,8 +254,8 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             Verifying your membership in this space.
           </p>
         </section>
@@ -267,8 +267,8 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Join required</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Join required</h1>
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             {joinError ?? "Join this space before editing posts."}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -278,14 +278,14 @@ function EditPostRoute() {
               onClick={() => {
                 void join();
               }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
             >
               {joinStatus === "joining" ? "Joining..." : "Join space"}
             </button>
             <Link
               to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
               params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
             >
               Back to space
             </Link>
@@ -299,7 +299,7 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Post not found</h1>
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Post not found</h1>
         </section>
       </main>
     );
@@ -309,14 +309,14 @@ function EditPostRoute() {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Edit forbidden</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+          <h1 className="display-title text-4xl font-bold text-sea-ink">Edit forbidden</h1>
+          <p className="m-0 mt-2 text-sm text-sea-ink-soft">
             Only the post author can edit this thread.
           </p>
           <Link
             to={appRoutes.postById(normalizedSpaceSlug, post.id).to}
             params={appRoutes.postById(normalizedSpaceSlug, post.id).params}
-            className="mt-4 inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+            className="mt-4 inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
           >
             Back to thread
           </Link>
@@ -329,34 +329,34 @@ function EditPostRoute() {
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker m-0">Edit Post</p>
-        <h1 className="display-title mt-2 text-4xl font-bold text-[var(--sea-ink)]">
+        <h1 className="display-title mt-2 text-4xl font-bold text-sea-ink">
           Update your thread
         </h1>
 
         <form className="mt-6 grid gap-4" onSubmit={onSubmit}>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <label className="grid gap-2 text-sm font-semibold text-sea-ink">
             Title
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm"
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <label className="grid gap-2 text-sm font-semibold text-sea-ink">
             Body
             <textarea
               value={bodyText}
               onChange={(event) => setBodyText(event.target.value)}
               rows={8}
-              className="rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 py-3 text-sm"
+              className="rounded-xl border border-chip-line bg-white/80 px-4 py-3 text-sm"
             />
           </label>
 
-          <div className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <div className="grid gap-2 text-sm font-semibold text-sea-ink">
             <label htmlFor="category">Category</label>
             {isTaxonomyPending ? (
-              <p className="m-0 text-xs font-normal text-[var(--sea-ink-soft)]">
+              <p className="m-0 text-xs font-normal text-sea-ink-soft">
                 Loading categories and tags...
               </p>
             ) : null}
@@ -364,7 +364,7 @@ function EditPostRoute() {
               id="category"
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-3 text-sm"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-3 text-sm"
             >
               <option value="">No category</option>
               {(categoryRows ?? []).map((category) => (
@@ -379,12 +379,12 @@ function EditPostRoute() {
                 value={newCategoryName}
                 onChange={(event) => setNewCategoryName(event.target.value)}
                 placeholder="Or create a new category (optional)"
-                className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm"
+                className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm"
               />
             ) : null}
           </div>
 
-          <div className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <div className="grid gap-2 text-sm font-semibold text-sea-ink">
             <span>Tags</span>
             <div className="flex flex-wrap gap-2">
               {(tagRows ?? []).map((tag) => {
@@ -402,8 +402,8 @@ function EditPostRoute() {
                     }}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                       selected
-                        ? "border-[var(--sea-ink)] bg-[var(--sea-ink)] text-white"
-                        : "border-[var(--chip-line)] bg-[var(--chip-bg)] text-[var(--sea-ink)]"
+                        ? "border-sea-ink bg-sea-ink text-white"
+                        : "border-chip-line bg-chip-bg text-sea-ink"
                     }`}
                   >
                     #{tag.name}
@@ -416,11 +416,11 @@ function EditPostRoute() {
               value={newTagNames}
               onChange={(event) => setNewTagNames(event.target.value)}
               placeholder="Add new tags, comma separated"
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm"
             />
           </div>
 
-          <div className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <div className="grid gap-2 text-sm font-semibold text-sea-ink">
             <span>Image</span>
             <input
               type="file"
@@ -431,7 +431,7 @@ function EditPostRoute() {
                   void onUploadImage(file);
                 }
               }}
-              className="rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 py-3 text-sm"
+              className="rounded-xl border border-chip-line bg-white/80 px-4 py-3 text-sm"
             />
             {isUploadingImage ? <p className="m-0 text-xs">Uploading image...</p> : null}
 
@@ -439,7 +439,7 @@ function EditPostRoute() {
               value={imageUrl}
               onChange={(event) => setImageUrl(event.target.value)}
               placeholder="Or paste image URL"
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm"
             />
           </div>
 
@@ -453,7 +453,7 @@ function EditPostRoute() {
             <button
               type="submit"
               disabled={isSaving || isUploadingImage}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-5 py-2 text-sm font-semibold text-white disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-sea-ink px-5 py-2 text-sm font-semibold text-white disabled:opacity-70"
             >
               {isSaving ? "Saving..." : "Save changes"}
             </button>
@@ -461,7 +461,7 @@ function EditPostRoute() {
             <Link
               to={appRoutes.postById(normalizedSpaceSlug, post.id).to}
               params={appRoutes.postById(normalizedSpaceSlug, post.id).params}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline"
             >
               Cancel
             </Link>

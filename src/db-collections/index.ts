@@ -1,6 +1,6 @@
 import { snakeCamelMapper } from "@electric-sql/client";
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection, localOnlyCollectionOptions } from "@tanstack/react-db";
+import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import {
   createCommentRequest,
@@ -30,12 +30,6 @@ const SpaceSchema = z.object({
   createdBy: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-});
-
-const MessageSchema = z.object({
-  id: z.number(),
-  text: z.string(),
-  user: z.string(),
 });
 
 const MembershipRoleSchema = z.enum(["owner", "staff", "user"]);
@@ -105,12 +99,10 @@ const PostTagSchema = z.object({
 
 export type Space = z.infer<typeof SpaceSchema>;
 export type Membership = z.infer<typeof MembershipSchema>;
-export type MembershipRole = z.infer<typeof MembershipRoleSchema>;
-export type Message = z.infer<typeof MessageSchema>;
 export type Post = z.infer<typeof PostSchema>;
 export type Comment = z.infer<typeof CommentSchema>;
 export type PostUpvote = z.infer<typeof PostUpvoteSchema>;
-export type Category = z.infer<typeof CategorySchema>;
+type Category = z.infer<typeof CategorySchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type PostTag = z.infer<typeof PostTagSchema>;
 
@@ -488,13 +480,6 @@ const postTagsHandlers = {
     assertServerOnlyMutation("post tag delete", transaction);
   },
 };
-
-export const messagesCollection = createCollection(
-  localOnlyCollectionOptions({
-    getKey: (message) => message.id,
-    schema: MessageSchema,
-  }),
-);
 
 export const spacesCollection = createElectricCollection<Space>({
   id: "spaces",

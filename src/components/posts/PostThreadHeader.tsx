@@ -15,26 +15,26 @@ export default function PostThreadHeader(props: PostThreadHeaderProps) {
   const body = plainTextFromRichText(props.item.post.bodyRichText);
 
   return (
-    <section className="rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
+    <section className="rounded-2xl border border-chip-line bg-island-bg p-5">
       <div className="flex flex-wrap gap-2 text-xs">
         {props.item.category ? (
-          <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-2.5 py-1 font-semibold uppercase">
+          <span className="rounded-full border border-chip-line bg-chip-bg px-2.5 py-1 font-semibold uppercase">
             {props.item.category.name}
           </span>
         ) : null}
         {props.item.tags.map((tag) => (
           <span
             key={tag.id}
-            className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-2.5 py-1"
+            className="rounded-full border border-chip-line bg-chip-bg px-2.5 py-1"
           >
             #{tag.name}
           </span>
         ))}
       </div>
 
-      <h1 className="mt-3 text-3xl font-bold text-[var(--sea-ink)]">{props.item.post.title}</h1>
+      <h1 className="mt-3 text-3xl font-bold text-sea-ink">{props.item.post.title}</h1>
 
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[var(--sea-ink-soft)]">
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-sea-ink-soft">
         {body || "No body content provided yet."}
       </p>
 
@@ -42,7 +42,7 @@ export default function PostThreadHeader(props: PostThreadHeaderProps) {
         <img
           src={props.item.post.imageUrl}
           alt="Attached"
-          className="mt-4 max-h-80 w-full rounded-xl border border-[var(--chip-line)] object-cover"
+          className="mt-4 max-h-80 w-full rounded-xl border border-chip-line object-cover"
         />
       ) : null}
 
@@ -51,7 +51,7 @@ export default function PostThreadHeader(props: PostThreadHeaderProps) {
           type="button"
           onClick={props.onToggleUpvote}
           disabled={props.isTogglingUpvote}
-          className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 font-semibold text-[var(--sea-ink)] disabled:opacity-70"
+          className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 font-semibold text-sea-ink disabled:opacity-70"
         >
           {props.item.hasUpvoted
             ? `Upvoted (${props.item.upvoteCount})`
@@ -63,7 +63,7 @@ export default function PostThreadHeader(props: PostThreadHeaderProps) {
           <Link
             to={appRoutes.editPostById(props.spaceSlug, props.item.post.id).to}
             params={appRoutes.editPostById(props.spaceSlug, props.item.post.id).params}
-            className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 font-semibold text-[var(--sea-ink)] no-underline"
+            className="rounded-full border border-chip-line bg-chip-bg px-3 py-1 font-semibold text-sea-ink no-underline"
           >
             Edit post
           </Link>

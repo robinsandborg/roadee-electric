@@ -1,4 +1,6 @@
-import LandingActions, { type SocialProvider } from "#/components/landing/LandingActions";
+import LandingActions, {
+  type SocialProvider,
+} from "#/components/landing/LandingActions";
 import LandingHero from "#/components/landing/LandingHero";
 import JoinSpaceForm from "#/components/landing/JoinSpaceForm";
 import { authClient } from "#/lib/auth-client";
@@ -9,7 +11,14 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/")({ component: App });
 
-const TEAM_LOGOS = ["Luma", "Monarch", "Northstar", "Duality", "Rivet", "Pixel Foundry"];
+const TEAM_LOGOS = [
+  "Luma",
+  "Monarch",
+  "Northstar",
+  "Duality",
+  "Rivet",
+  "Pixel Foundry",
+];
 
 const BUILDER_MOMENTS = [
   {
@@ -37,9 +46,12 @@ const COMMUNITY_SPOTLIGHT = [
 
 function App() {
   const navigate = useNavigate();
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
 
-  const [pendingProvider, setPendingProvider] = useState<SocialProvider | null>(null);
+  const [pendingProvider, setPendingProvider] = useState<SocialProvider | null>(
+    null,
+  );
   const [authError, setAuthError] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(session?.user);
@@ -63,7 +75,9 @@ function App() {
               setAuthError(null);
 
               const callbackURL =
-                intent === "create-space" ? appRoutes.createSpace : appRoutes.home;
+                intent === "create-space"
+                  ? appRoutes.createSpace
+                  : appRoutes.home;
 
               try {
                 const result = await authClient.signIn.social({
@@ -98,7 +112,9 @@ function App() {
       </div>
 
       <section className="landing-trust-strip mt-6 rounded-[1.9rem] px-5 py-4 sm:px-7">
-        <p className="landing-kicker m-0">Used by product teams building in public</p>
+        <p className="landing-kicker m-0">
+          Used by product teams building in public
+        </p>
         <div className="landing-logo-list mt-3">
           {TEAM_LOGOS.map((logo) => (
             <span key={logo} className="landing-logo-pill">
@@ -111,7 +127,7 @@ function App() {
       <section className="landing-showcase-band mt-6 rounded-[1.95rem] p-6 sm:p-8">
         <div className="landing-section-head">
           <p className="landing-kicker m-0">From First Signal To Shipping</p>
-          <h2 className="m-0 text-3xl leading-tight font-black text-[var(--sea-ink)] sm:text-4xl">
+          <h2 className="m-0 text-3xl leading-tight font-black text-sea-ink sm:text-4xl">
             One workflow, visible to everyone.
           </h2>
         </div>
@@ -123,16 +139,22 @@ function App() {
               className="landing-feature-tile rounded-2xl p-4"
               style={{ animationDelay: `${index * 80 + 70}ms` }}
             >
-              <p className="m-0 text-sm font-semibold text-[var(--sea-ink)]">{item.title}</p>
-              <p className="m-0 mt-1 text-sm text-[var(--landing-copy-muted)]">{item.copy}</p>
+              <p className="m-0 text-sm font-semibold text-sea-ink">
+                {item.title}
+              </p>
+              <p className="m-0 mt-1 text-sm text-landing-copy-muted">
+                {item.copy}
+              </p>
             </article>
           ))}
           <article className="landing-feature-tile landing-feature-tile--accent rounded-2xl p-4">
-            <p className="m-0 text-xs font-semibold tracking-wide text-[var(--sea-ink-soft)] uppercase">
+            <p className="m-0 text-xs font-semibold tracking-wide text-sea-ink-soft uppercase">
               Live snapshot
             </p>
-            <p className="m-0 mt-2 text-3xl leading-none font-black text-[var(--sea-ink)]">2.4s</p>
-            <p className="m-0 mt-1 text-sm text-[var(--landing-copy-muted)]">
+            <p className="m-0 mt-2 text-3xl leading-none font-black text-sea-ink">
+              0.4s
+            </p>
+            <p className="m-0 mt-1 text-sm text-landing-copy-muted">
               avg sync latency across active spaces
             </p>
           </article>
@@ -142,17 +164,22 @@ function App() {
       <section className="landing-gallery mt-6 rounded-[1.95rem] p-6 sm:p-8">
         <div className="landing-section-head">
           <p className="landing-kicker m-0">Community Moments</p>
-          <h2 className="m-0 text-3xl leading-tight font-black text-[var(--sea-ink)] sm:text-4xl">
+          <h2 className="m-0 text-3xl leading-tight font-black text-sea-ink sm:text-4xl">
             Explore what teams are building.
           </h2>
         </div>
 
         <div className="landing-gallery-grid mt-6">
           {COMMUNITY_SPOTLIGHT.map((title, index) => (
-            <article key={title} className="landing-gallery-card rounded-2xl p-4">
+            <article
+              key={title}
+              className="landing-gallery-card rounded-2xl p-4"
+            >
               <div className="landing-gallery-thumb" aria-hidden="true" />
-              <p className="m-0 mt-3 text-sm font-semibold text-[var(--sea-ink)]">{title}</p>
-              <p className="m-0 mt-1 text-xs text-[var(--landing-copy-muted)]">
+              <p className="m-0 mt-3 text-sm font-semibold text-sea-ink">
+                {title}
+              </p>
+              <p className="m-0 mt-1 text-xs text-landing-copy-muted">
                 Showcase #{String(index + 1).padStart(2, "0")}
               </p>
             </article>
@@ -175,11 +202,14 @@ function App() {
   );
 }
 
-function hasErrorMessage(value: unknown): value is { error: { message: string } } {
+function hasErrorMessage(
+  value: unknown,
+): value is { error: { message: string } } {
   return (
     typeof value === "object" &&
     value !== null &&
     "error" in value &&
-    typeof (value as { error?: { message?: unknown } }).error?.message === "string"
+    typeof (value as { error?: { message?: unknown } }).error?.message ===
+      "string"
   );
 }

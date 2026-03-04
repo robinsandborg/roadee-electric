@@ -38,7 +38,7 @@ function CreateSpaceRoute() {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Setup</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Preparing your create flow...
           </h1>
         </section>
@@ -51,10 +51,10 @@ function CreateSpaceRoute() {
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Setup</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+          <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
             Sign in to create your space
           </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+          <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
             Use Google or GitHub and return to this page automatically.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -64,7 +64,7 @@ function CreateSpaceRoute() {
               onClick={() => {
                 void signInWithProvider("google", setPendingProvider);
               }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
             >
               {pendingProvider === "google" ? "Connecting..." : "Continue with Google"}
             </button>
@@ -74,7 +74,7 @@ function CreateSpaceRoute() {
               onClick={() => {
                 void signInWithProvider("github", setPendingProvider);
               }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink transition hover:-translate-y-0.5 disabled:opacity-70"
             >
               {pendingProvider === "github" ? "Connecting..." : "Continue with GitHub"}
             </button>
@@ -82,7 +82,7 @@ function CreateSpaceRoute() {
 
           <Link
             to={appRoutes.home}
-            className="mt-6 inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            className="mt-6 inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
           >
             Back to landing page
           </Link>
@@ -137,15 +137,15 @@ function CreateSpaceRoute() {
     <main className="page-wrap px-4 py-12">
       <section className="island-shell rounded-2xl p-6 sm:p-8">
         <p className="island-kicker mb-2">Space Setup</p>
-        <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+        <h1 className="display-title mb-3 text-4xl font-bold text-sea-ink sm:text-5xl">
           Create your product space
         </h1>
-        <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+        <p className="m-0 max-w-3xl text-base leading-8 text-sea-ink-soft">
           Name your community, choose a unique slug, and start inviting users.
         </p>
 
         <form className="mt-7 grid gap-4" onSubmit={onSubmit}>
-          <label className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <label className="grid gap-2 text-sm font-semibold text-sea-ink">
             Space name
             <input
               value={name}
@@ -153,11 +153,11 @@ function CreateSpaceRoute() {
                 setName(event.target.value);
               }}
               placeholder="Roadee Mobile"
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm text-[var(--sea-ink)] outline-none ring-0 focus:border-[var(--sea-ink-soft)]"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm text-sea-ink outline-none ring-0 focus:border-sea-ink-soft"
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <label className="grid gap-2 text-sm font-semibold text-sea-ink">
             Slug
             <input
               value={slug}
@@ -166,11 +166,11 @@ function CreateSpaceRoute() {
                 setSlug(event.target.value);
               }}
               placeholder="roadee-mobile"
-              className="h-11 rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 text-sm text-[var(--sea-ink)] outline-none ring-0 focus:border-[var(--sea-ink-soft)]"
+              className="h-11 rounded-xl border border-chip-line bg-white/80 px-4 text-sm text-sea-ink outline-none ring-0 focus:border-sea-ink-soft"
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
+          <label className="grid gap-2 text-sm font-semibold text-sea-ink">
             Description
             <textarea
               value={description}
@@ -179,7 +179,7 @@ function CreateSpaceRoute() {
               }}
               rows={4}
               placeholder="A shared place for requests, triage notes, and progress updates."
-              className="rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 py-3 text-sm text-[var(--sea-ink)] outline-none ring-0 focus:border-[var(--sea-ink-soft)]"
+              className="rounded-xl border border-chip-line bg-white/80 px-4 py-3 text-sm text-sea-ink outline-none ring-0 focus:border-sea-ink-soft"
             />
           </label>
 
@@ -190,7 +190,7 @@ function CreateSpaceRoute() {
           ) : null}
 
           {slugSuggestion ? (
-            <p className="m-0 text-sm text-[var(--sea-ink-soft)]">
+            <p className="m-0 text-sm text-sea-ink-soft">
               Try this available slug:{" "}
               <button
                 type="button"
@@ -199,7 +199,7 @@ function CreateSpaceRoute() {
                   setSlugEdited(true);
                   setSlugSuggestion(null);
                 }}
-                className="ml-1 rounded-md border border-[var(--chip-line)] bg-[var(--chip-bg)] px-2 py-1 text-xs font-semibold text-[var(--sea-ink)]"
+                className="ml-1 rounded-md border border-chip-line bg-chip-bg px-2 py-1 text-xs font-semibold text-sea-ink"
               >
                 {slugSuggestion}
               </button>
@@ -210,14 +210,14 @@ function CreateSpaceRoute() {
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-70"
+              className="rounded-full border border-chip-line bg-sea-ink px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-70"
             >
               {isSaving ? "Creating..." : "Create space"}
             </button>
 
             <Link
               to={appRoutes.home}
-              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+              className="inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-sm font-semibold text-sea-ink no-underline transition hover:-translate-y-0.5"
             >
               Cancel
             </Link>
@@ -226,7 +226,7 @@ function CreateSpaceRoute() {
 
         <Link
           to={appRoutes.home}
-          className="mt-6 inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-xs font-semibold text-[var(--sea-ink-soft)] no-underline transition hover:-translate-y-0.5"
+          className="mt-6 inline-flex rounded-full border border-chip-line bg-chip-bg px-4 py-2 text-xs font-semibold text-sea-ink-soft no-underline transition hover:-translate-y-0.5"
         >
           Back to landing page
         </Link>

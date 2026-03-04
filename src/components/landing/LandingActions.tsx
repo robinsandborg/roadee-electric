@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 export type SocialProvider = "google" | "github";
-export type SignInIntent = "sign-in" | "create-space";
+type SignInIntent = "sign-in" | "create-space";
 
 type LandingActionsProps = {
   isAuthenticated: boolean;
@@ -28,10 +28,10 @@ export default function LandingActions({
   return (
     <section className="landing-panel rounded-[1.9rem] p-6 sm:p-7">
       <p className="landing-kicker">Start Here</p>
-      <h2 className="mt-2 text-2xl font-black text-[var(--sea-ink)] sm:text-[2rem]">
+      <h2 className="mt-2 text-2xl font-black text-sea-ink sm:text-[2rem]">
         Launch your community space.
       </h2>
-      <p className="m-0 mt-2 text-sm text-[var(--landing-copy-muted)]">
+      <p className="m-0 mt-2 text-sm text-landing-copy-muted">
         Create a public room for requests, conversations, and roadmap updates.
       </p>
 
@@ -63,7 +63,7 @@ export default function LandingActions({
 
       {showProviders && !isAuthenticated ? (
         <div className="landing-auth-card mt-5 rounded-2xl p-4">
-          <p className="m-0 text-sm font-semibold text-[var(--sea-ink)]">
+          <p className="m-0 text-sm font-semibold text-sea-ink">
             {intent === "create-space"
               ? "Sign in to continue to space creation"
               : "Choose a provider to sign in"}
@@ -89,7 +89,7 @@ export default function LandingActions({
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-2 text-sm text-[var(--landing-copy-muted)]">
+      <div className="mt-5 grid gap-2 text-sm text-landing-copy-muted">
         <p className="m-0">No setup wizard. Just name your space and invite your users.</p>
         <p className="m-0">Works great for product teams, open betas, and private pilots.</p>
       </div>

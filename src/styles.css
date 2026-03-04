@@ -5,7 +5,8 @@
   font-family: "Switzer";
   src: url("/fonts/switzer/Switzer-Variable.eot");
   src:
-    url("/fonts/switzer/Switzer-Variable.eot?#iefix") format("embedded-opentype"),
+    url("/fonts/switzer/Switzer-Variable.eot?#iefix")
+      format("embedded-opentype"),
     url("/fonts/switzer/Switzer-Variable.woff2") format("woff2"),
     url("/fonts/switzer/Switzer-Variable.woff") format("woff"),
     url("/fonts/switzer/Switzer-Variable.ttf") format("truetype");
@@ -16,6 +17,18 @@
 
 @theme {
   --font-sans: "Switzer", ui-sans-serif, system-ui, sans-serif;
+  --color-offwhite: var(--offwhite);
+  --color-bg-base: var(--bg-base);
+  --color-copy-base: var(--copy-base);
+  --color-line: var(--line);
+  --color-sea-ink: var(--sea-ink);
+  --color-sea-ink-soft: var(--sea-ink-soft);
+  --color-header-bg: var(--header-bg);
+  --color-chip-bg: var(--chip-bg);
+  --color-chip-line: var(--chip-line);
+  --color-island-bg: var(--island-bg);
+  --color-landing-copy-muted: var(--landing-copy-muted);
+  --shadow-island-shadow: var(--island-shadow);
 }
 
 :root {
@@ -110,7 +123,6 @@ body {
 }
 
 a {
-  color: var(--copy-base);
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
@@ -541,7 +553,8 @@ pre code {
   background: var(--landing-cta-bg);
   border-color: color-mix(in srgb, var(--action-primary) 35%, var(--chip-line));
   color: var(--sea-ink);
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--action-primary) 24%, transparent);
+  box-shadow: 0 8px 20px
+    color-mix(in srgb, var(--action-primary) 24%, transparent);
 }
 
 .landing-cta-primary--final {
@@ -631,7 +644,8 @@ pre code {
     min-height: 42rem;
   }
 
-  .landing-hero > :not(.landing-artboard):not(.landing-hero-glow):not(.landing-float-chip) {
+  .landing-hero
+    > :not(.landing-artboard):not(.landing-hero-glow):not(.landing-float-chip) {
     max-width: calc(100% - 24rem);
   }
 

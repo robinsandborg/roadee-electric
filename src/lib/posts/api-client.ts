@@ -1,6 +1,5 @@
 import { TRPCClientError } from "@trpc/client";
 import type { Comment, Post, PostTag, PostUpvote } from "#/db-collections";
-import type { PostThread, PostsSnapshot } from "#/lib/posts/types";
 import { trpc } from "#/lib/trpc-client";
 
 export class PostsApiError extends Error {
@@ -36,12 +35,6 @@ export async function createPostRequest(input: {
   } catch (error) {
     throw mapTrpcError(error);
   }
-}
-
-export async function fetchPostThread(postId: string): Promise<PostThread> {
-  return requestJson(`/api/posts/${encodeURIComponent(postId)}`, {
-    method: "GET",
-  });
 }
 
 export async function updateOwnPostRequest(input: {
@@ -106,16 +99,6 @@ export async function toggleUpvoteRequest(input: {
   }
 }
 
-export async function fetchTaxonomyRequest(spaceSlug: string): Promise<{
-  spaceId: string;
-  categories: PostsSnapshot["categories"];
-  tags: PostsSnapshot["tags"];
-}> {
-  return requestJson(`/api/posts/taxonomy?spaceSlug=${encodeURIComponent(spaceSlug)}`, {
-    method: "GET",
-  });
-}
-
 export async function uploadPostImageRequest(file: File): Promise<{
   imageUrl: string;
   imageMeta: Record<string, unknown>;
@@ -165,29 +148,6 @@ export function plainTextFromRichText(value: unknown): string {
 
   const text = (value as { text?: unknown }).text;
   return typeof text === "string" ? text : "";
-}
-
-async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
-  const headers = new Headers(init.headers);
-  if (!(init.body instanceof FormData)) {
-    headers.set("content-type", "application/json");
-  }
-
-  const response = await fetch(url, {
-    ...init,
-    headers,
-  });
-
-  const payload = (await safeJson(response)) as { code?: string; message?: string } & T;
-  if (!response.ok) {
-    throw new PostsApiError(
-      payload.message ?? "Request failed",
-      response.status,
-      payload.code ?? "request_failed",
-    );
-  }
-
-  return payload;
 }
 
 async function safeJson(response: Response): Promise<unknown> {

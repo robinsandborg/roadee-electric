@@ -4,7 +4,7 @@
  * App data collections are expected to sync through Electric shapes in the browser.
  * `VITE_ELECTRIC_SHAPE_PROXY_URL` should point at the authenticated shape proxy base path.
  */
-export function getElectricShapeProxyUrl(): string | null {
+function getElectricShapeProxyUrl(): string | null {
   const value = import.meta.env.VITE_ELECTRIC_SHAPE_PROXY_URL;
   if (typeof value !== "string" || value.trim().length === 0) {
     return null;
@@ -20,10 +20,6 @@ export function getElectricShapeProxyUrl(): string | null {
   }
 
   return trimmed;
-}
-
-export function isElectricShapeSyncEnabled(): boolean {
-  return Boolean(getElectricShapeProxyUrl());
 }
 
 export function getSpacesShapeUrl(): string | null {

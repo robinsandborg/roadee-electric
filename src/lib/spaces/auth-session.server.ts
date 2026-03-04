@@ -17,7 +17,7 @@ const SESSION_CACHE_TTL_MS = 5_000;
 const sessionUserCache = new Map<string, SessionCacheEntry>();
 const sessionUserCacheKeysByUserId = new Map<string, Set<string>>();
 
-export async function getSessionUser(request: Request): Promise<SessionUser | null> {
+async function getSessionUser(request: Request): Promise<SessionUser | null> {
   const cacheKey = getSessionCacheKey(request);
   if (cacheKey) {
     const cached = readCachedSessionUser(cacheKey);
@@ -55,18 +55,6 @@ export async function requireSessionUser(request: Request): Promise<SessionUser>
   }
 
   return user;
-}
-
-export function invalidateSessionUserCacheForUser(userId: string): void {
-  const keys = sessionUserCacheKeysByUserId.get(userId);
-  if (!keys) {
-    return;
-  }
-
-  for (const key of keys) {
-    sessionUserCache.delete(key);
-  }
-  sessionUserCacheKeysByUserId.delete(userId);
 }
 
 function getSessionCacheKey(request: Request): string | null {

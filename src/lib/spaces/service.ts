@@ -195,48 +195,6 @@ export function promoteMemberToStaff(
   };
 }
 
-export function listVisibleStateForUser(state: SpacesState, userId: string): SpacesState {
-  const memberships = state.memberships.filter((membership) => membership.userId === userId);
-  const allowedSpaceIds = new Set(memberships.map((membership) => membership.spaceId));
-  const spaces = state.spaces.filter((space) => allowedSpaceIds.has(space.id));
-  const scopedMemberships = state.memberships.filter((membership) =>
-    allowedSpaceIds.has(membership.spaceId),
-  );
-
-  return {
-    spaces,
-    memberships: scopedMemberships,
-  };
-}
-
-export function listMembersBySlug(
-  state: SpacesState,
-  spaceSlug: string,
-): {
-  space: SpaceRecord;
-  memberships: MembershipRecord[];
-} {
-  const slug = normalizeSpaceSlug(spaceSlug);
-  const space = state.spaces.find((candidate) => candidate.slug === slug);
-  if (!space) {
-    throw new SpacesServiceError("space_not_found", "Space not found.");
-  }
-
-  return {
-    space,
-    memberships: state.memberships.filter((membership) => membership.spaceId === space.id),
-  };
-}
-
-export function getRoleForUserInSpace(
-  state: SpacesState,
-  spaceId: string,
-  userId: string,
-): MembershipRole | null {
-  const membership = findMembership(state, spaceId, userId);
-  return membership?.role ?? null;
-}
-
 function findMembership(
   state: SpacesState,
   spaceId: string,
