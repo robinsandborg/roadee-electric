@@ -11,6 +11,7 @@ export const Route = createFileRoute("/api/electric/shapes/posts")({
           scopeColumn: "space_id",
           columns:
             "id,space_id,author_id,title,body_rich_text,image_url,image_meta,category_id,created_at,updated_at",
+          allowPublicBySlug: true,
         }),
     },
   },

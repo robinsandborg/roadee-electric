@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { and, eq, inArray, useLiveQuery } from "@tanstack/react-db";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PostCommentList from "#/components/posts/PostCommentList";
 import PostThreadHeader from "#/components/posts/PostThreadHeader";
 import {
@@ -21,25 +21,31 @@ export const Route = createFileRoute("/s/$spaceSlug/p/$postId")({
   component: PostDetailRoute,
 });
 
+const NOT_FOUND_GRACE_MS = 900;
+
 function PostDetailRoute() {
   const { spaceSlug, postId } = Route.useParams();
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
   const { data: session, isPending } = authClient.useSession();
+  const viewerUserId = session?.user?.id ?? null;
+  const isSignedIn = Boolean(viewerUserId);
+  const isSessionChecking = isPending;
 
   const [commentText, setCommentText] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [isTogglingUpvote, setIsTogglingUpvote] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [canShowSpaceNotFound, setCanShowSpaceNotFound] = useState(false);
+  const [canShowPostNotFound, setCanShowPostNotFound] = useState(false);
   const {
     space,
     membership: myMembership,
     isAccessPending,
     joinStatus,
-    joinError,
     join,
   } = useSpaceAccess({
     normalizedSpaceSlug,
-    userId: session?.user.id,
+    userId: viewerUserId ?? undefined,
     joinErrorMessage: "Could not verify membership for this post.",
   });
 
@@ -59,6 +65,30 @@ function PostDetailRoute() {
     [postId, space?.id],
   );
   const post = postRows?.[0];
+
+  useEffect(() => {
+    setCanShowSpaceNotFound(false);
+
+    const timeout = setTimeout(() => {
+      setCanShowSpaceNotFound(true);
+    }, NOT_FOUND_GRACE_MS);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [normalizedSpaceSlug]);
+
+  useEffect(() => {
+    setCanShowPostNotFound(false);
+
+    const timeout = setTimeout(() => {
+      setCanShowPostNotFound(true);
+    }, NOT_FOUND_GRACE_MS);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [postId, space?.id]);
 
   const { data: commentsForPostRows } = useLiveQuery(
     (query) => {
@@ -149,7 +179,7 @@ function PostDetailRoute() {
   );
 
   const thread = useMemo(() => {
-    if (!post || !session?.user) {
+    if (!post) {
       return null;
     }
 
@@ -161,7 +191,9 @@ function PostDetailRoute() {
       .filter((tag): tag is NonNullable<typeof tag> => Boolean(tag));
 
     const upvoteCount = (upvoteRows ?? []).length;
-    const hasUpvoted = (upvoteRows ?? []).some((upvote) => upvote.userId === session.user.id);
+    const hasUpvoted = Boolean(
+      viewerUserId && (upvoteRows ?? []).some((upvote) => upvote.userId === viewerUserId),
+    );
 
     const comments = [...(commentsForPostRows ?? [])].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
@@ -178,23 +210,43 @@ function PostDetailRoute() {
       },
       comments,
     };
-  }, [categoryRows, commentsForPostRows, post, postTagRows, session?.user, tagRows, upvoteRows]);
+  }, [categoryRows, commentsForPostRows, post, postTagRows, tagRows, upvoteRows, viewerUserId]);
 
   const onToggleUpvote = async () => {
-    if (!session?.user?.id || !thread) {
+    if (!thread) {
+      return;
+    }
+    if (isTogglingUpvote) {
       return;
     }
 
-    const joined = await join();
-    if (!joined) {
-      setActionError("Join this space before upvoting.");
+    if (!viewerUserId) {
+      setActionError(
+        isSessionChecking ? "Checking your session..." : "Sign in to upvote this post.",
+      );
       return;
+    }
+    setIsTogglingUpvote(true);
+
+    let mutationSpaceId: string | null = space?.id ?? null;
+    if (!myMembership) {
+      const joined = await join();
+      if (!joined) {
+        setActionError("Join this space before upvoting.");
+        setIsTogglingUpvote(false);
+        return;
+      }
+      mutationSpaceId = joined.space.id;
     }
 
     setActionError(null);
-    setIsTogglingUpvote(true);
 
-    const existing = (upvoteRows ?? []).find((row) => row.userId === session.user.id);
+    const existing = (upvoteRows ?? []).find((row) => row.userId === viewerUserId);
+    if (!mutationSpaceId) {
+      setActionError("Could not update upvote.");
+      setIsTogglingUpvote(false);
+      return;
+    }
 
     try {
       const tx = existing
@@ -205,8 +257,8 @@ function PostDetailRoute() {
             {
               id: `optimistic-upvote-${crypto.randomUUID()}`,
               postId,
-              spaceId: joined.space.id,
-              userId: session.user.id,
+              spaceId: mutationSpaceId,
+              userId: viewerUserId,
               createdAt: new Date().toISOString(),
             },
             {
@@ -214,10 +266,15 @@ function PostDetailRoute() {
             },
           );
 
-      await tx.isPersisted.promise;
+      void tx.isPersisted.promise
+        .catch(() => {
+          setActionError("Could not update upvote.");
+        })
+        .finally(() => {
+          setIsTogglingUpvote(false);
+        });
     } catch {
       setActionError("Could not update upvote.");
-    } finally {
       setIsTogglingUpvote(false);
     }
   };
@@ -225,7 +282,8 @@ function PostDetailRoute() {
   const onSubmitComment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!session?.user?.id) {
+    if (!viewerUserId) {
+      setActionError(isSessionChecking ? "Checking your session..." : "Sign in to comment.");
       return;
     }
 
@@ -255,7 +313,7 @@ function PostDetailRoute() {
           id: commentId,
           postId,
           spaceId: joined.space.id,
-          authorId: session.user.id,
+          authorId: viewerUserId,
           bodyRichText: richTextFromPlainText(trimmed),
           createdAt: now,
           updatedAt: now,
@@ -280,31 +338,6 @@ function PostDetailRoute() {
     }
   };
 
-  if (isPending) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
-            Sign in required
-          </h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
-            You need to authenticate before viewing this thread.
-          </p>
-        </section>
-      </main>
-    );
-  }
-
   if (joinStatus === "not-found") {
     return (
       <main className="page-wrap px-4 py-12">
@@ -320,38 +353,23 @@ function PostDetailRoute() {
     );
   }
 
-  if (isAccessPending && (!space || !myMembership)) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
-          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
-            Verifying your membership in this space.
-          </p>
-        </section>
-      </main>
-    );
+  const shouldShowSpaceSkeleton =
+    isSessionChecking || isAccessPending || (!space && !canShowSpaceNotFound);
+  if (shouldShowSpaceSkeleton) {
+    return <PostThreadSkeleton message="Loading this space." />;
   }
 
-  if (!space || !myMembership) {
+  if (!space) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Join required</h1>
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
+            Space not found
+          </h1>
           <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
-            {joinError ?? "Join this space to view and interact with this thread."}
+            No space exists for <code>{normalizedSpaceSlug}</code>.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={joinStatus === "joining"}
-              onClick={() => {
-                void join();
-              }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
-            >
-              {joinStatus === "joining" ? "Joining..." : "Join space"}
-            </button>
             <Link
               to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
               params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
@@ -363,6 +381,11 @@ function PostDetailRoute() {
         </section>
       </main>
     );
+  }
+
+  const shouldShowThreadSkeleton = postRows === undefined || (!post && !canShowPostNotFound);
+  if (shouldShowThreadSkeleton) {
+    return <PostThreadSkeleton message="Syncing this thread." />;
   }
 
   if (!thread) {
@@ -401,7 +424,7 @@ function PostDetailRoute() {
         <PostThreadHeader
           item={thread.item}
           spaceSlug={normalizedSpaceSlug}
-          canEdit={thread.item.post.authorId === session.user.id}
+          canEdit={Boolean(viewerUserId) && thread.item.post.authorId === viewerUserId}
           isTogglingUpvote={isTogglingUpvote}
           onToggleUpvote={() => {
             void onToggleUpvote();
@@ -410,18 +433,32 @@ function PostDetailRoute() {
 
         <section className="rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
           <h2 className="m-0 text-lg font-bold text-[var(--sea-ink)]">Comments</h2>
+          {!isSignedIn ? (
+            <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+              {isSessionChecking
+                ? "Checking your session..."
+                : "Sign in to join this space and leave comments."}
+            </p>
+          ) : null}
 
           <form className="mt-4 grid gap-3" onSubmit={onSubmitComment}>
             <textarea
               value={commentText}
               onChange={(event) => setCommentText(event.target.value)}
               rows={4}
-              placeholder="Write your comment"
+              disabled={!isSignedIn || isSessionChecking}
+              placeholder={
+                isSessionChecking
+                  ? "Checking your session..."
+                  : isSignedIn
+                    ? "Write your comment"
+                    : "Sign in to comment"
+              }
               className="rounded-xl border border-[var(--chip-line)] bg-white/80 px-4 py-3 text-sm text-[var(--sea-ink)] outline-none"
             />
             <button
               type="submit"
-              disabled={isSendingComment}
+              disabled={!isSignedIn || isSessionChecking || isSendingComment}
               className="w-fit rounded-full border border-[var(--chip-line)] bg-[var(--sea-ink)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
             >
               {isSendingComment ? "Sending..." : "Comment"}
@@ -439,6 +476,30 @@ function PostDetailRoute() {
           </div>
         </section>
       </div>
+    </main>
+  );
+}
+
+function PostThreadSkeleton({ message }: { message: string }) {
+  return (
+    <main className="page-wrap px-4 py-12">
+      <section className="island-shell rounded-2xl p-6 sm:p-8">
+        <div className="h-10 w-80 animate-pulse rounded-xl bg-[var(--chip-bg)]" />
+        <p className="m-0 mt-3 text-sm text-[var(--sea-ink-soft)]">{message}</p>
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
+        <div className="h-6 w-28 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+        <div className="mt-4 h-8 w-3/4 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+        <div className="mt-4 h-4 w-full animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+        <div className="mt-2 h-4 w-11/12 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5">
+        <div className="h-6 w-24 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+        <div className="mt-4 h-20 w-full animate-pulse rounded-xl bg-[var(--chip-bg)]" />
+        <div className="mt-3 h-9 w-28 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+      </section>
     </main>
   );
 }

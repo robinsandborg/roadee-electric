@@ -31,10 +31,6 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
 
   const { data: spaceRows } = useLiveQuery(
     (query) => {
-      if (!input.userId) {
-        return undefined;
-      }
-
       return query
         .from({ space: spacesCollection })
         .where(({ space }) => eq(space.slug, input.normalizedSpaceSlug))
@@ -42,7 +38,7 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
           ...space,
         }));
     },
-    [input.normalizedSpaceSlug, input.userId],
+    [input.normalizedSpaceSlug],
   );
   const fallbackSpace = useMemo(() => {
     if (!joinedSpace) {
@@ -85,9 +81,11 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
 
   const membership = myMembershipRows?.[0] ?? fallbackMembership;
   const isAccessPending =
-    Boolean(input.userId) &&
-    ((!fallbackSpace && spaceRows === undefined) ||
-      (Boolean(space?.id) && !fallbackMembership && myMembershipRows === undefined));
+    (!fallbackSpace && spaceRows === undefined) ||
+    (Boolean(input.userId) &&
+      Boolean(space?.id) &&
+      !fallbackMembership &&
+      myMembershipRows === undefined);
 
   const join = async (): Promise<{ space: Space; membership: Membership } | null> => {
     if (!input.userId) {

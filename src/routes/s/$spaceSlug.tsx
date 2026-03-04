@@ -22,6 +22,8 @@ export const Route = createFileRoute("/s/$spaceSlug")({
 
 type Provider = "google" | "github";
 const INITIAL_VISIBLE_POST_COUNT = 30;
+const NOT_FOUND_GRACE_MS = 900;
+const FEED_SKELETON_CARD_COUNT = 3;
 
 function SpaceRoute() {
   const { spaceSlug } = Route.useParams();
@@ -39,8 +41,9 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
   const { data: session, isPending } = authClient.useSession();
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
-  const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
+  const [pendingUpvotePostIds, setPendingUpvotePostIds] = useState<Set<string>>(new Set());
   const [visiblePostLimit, setVisiblePostLimit] = useState(INITIAL_VISIBLE_POST_COUNT);
+  const [canShowNotFound, setCanShowNotFound] = useState(false);
   const {
     space,
     membership: myMembership,
@@ -164,14 +167,29 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
 
   const activeSpace = space;
   const activeMembership = myMembership;
+  const viewerUserId = session?.user?.id ?? null;
+  const isSignedIn = Boolean(viewerUserId);
+  const isSessionChecking = isPending;
   const canManageMembers = activeMembership?.role === "owner" || activeMembership?.role === "staff";
 
   useEffect(() => {
     setVisiblePostLimit(INITIAL_VISIBLE_POST_COUNT);
   }, [normalizedSpaceSlug]);
 
+  useEffect(() => {
+    setCanShowNotFound(false);
+
+    const timeout = setTimeout(() => {
+      setCanShowNotFound(true);
+    }, NOT_FOUND_GRACE_MS);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [normalizedSpaceSlug]);
+
   const feed = useMemo(() => {
-    if (!session?.user || !postRows) {
+    if (!postRows) {
       return [];
     }
 
@@ -209,40 +227,77 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
         continue;
       }
       upvoteCountByPostId.set(upvote.postId, (upvoteCountByPostId.get(upvote.postId) ?? 0) + 1);
-      if (upvote.userId === session.user.id) {
+      if (viewerUserId && upvote.userId === viewerUserId) {
         hasUpvotedByPostId.add(upvote.postId);
       }
     }
 
     return visiblePosts.map((post) => ({
-        post,
-        category: post.categoryId ? (categoriesById.get(post.categoryId) ?? null) : null,
-        tags: postTagsByPostId.get(post.id) ?? [],
-        commentCount: commentCountByPostId.get(post.id) ?? 0,
-        upvoteCount: upvoteCountByPostId.get(post.id) ?? 0,
-        hasUpvoted: hasUpvotedByPostId.has(post.id),
-      }));
-  }, [categoryRows, commentRows, postRows, postTagRows, session?.user, tagRows, upvoteRows, visiblePosts]);
+      post,
+      category: post.categoryId ? (categoriesById.get(post.categoryId) ?? null) : null,
+      tags: postTagsByPostId.get(post.id) ?? [],
+      commentCount: commentCountByPostId.get(post.id) ?? 0,
+      upvoteCount: upvoteCountByPostId.get(post.id) ?? 0,
+      hasUpvoted: hasUpvotedByPostId.has(post.id),
+    }));
+  }, [
+    categoryRows,
+    commentRows,
+    postRows,
+    postTagRows,
+    tagRows,
+    upvoteRows,
+    viewerUserId,
+    visiblePosts,
+  ]);
   const hasMorePosts = sortedPosts.length > visiblePosts.length;
 
   const onToggleUpvote = async (postId: string) => {
-    if (!session?.user?.id) {
+    if (pendingUpvotePostIds.has(postId)) {
       return;
     }
 
-    const joined = await join();
-    if (!joined) {
-      setPostActionError("Join this space before upvoting.");
+    if (!viewerUserId) {
+      setPostActionError(
+        isSessionChecking ? "Checking your session..." : "Sign in to upvote posts.",
+      );
       return;
+    }
+    setPendingUpvotePostIds((current) => {
+      const next = new Set(current);
+      next.add(postId);
+      return next;
+    });
+
+    let mutationSpaceId: string | null = activeSpace?.id ?? null;
+    if (!activeMembership) {
+      const joined = await join();
+      if (!joined) {
+        setPostActionError("Join this space before upvoting.");
+        setPendingUpvotePostIds((current) => {
+          const next = new Set(current);
+          next.delete(postId);
+          return next;
+        });
+        return;
+      }
+      mutationSpaceId = joined.space.id;
     }
 
     setPostActionError(null);
-    setTogglingPostId(postId);
 
-    const existingRows = (upvoteRows ?? []).filter(
-      (upvote) => upvote.postId === postId && upvote.userId === session.user.id,
+    const existing = (upvoteRows ?? []).find(
+      (upvote) => upvote.postId === postId && upvote.userId === viewerUserId,
     );
-    const existing = existingRows[0];
+    if (!mutationSpaceId) {
+      setPostActionError("Could not update upvote.");
+      setPendingUpvotePostIds((current) => {
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
+      return;
+    }
 
     try {
       const tx = existing
@@ -253,8 +308,8 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             {
               id: `optimistic-upvote-${crypto.randomUUID()}`,
               postId,
-              spaceId: joined.space.id,
-              userId: session.user.id,
+              spaceId: mutationSpaceId,
+              userId: viewerUserId,
               createdAt: new Date().toISOString(),
             },
             {
@@ -262,64 +317,26 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             },
           );
 
-      await tx.isPersisted.promise;
+      void tx.isPersisted.promise
+        .catch(() => {
+          setPostActionError("Could not update upvote.");
+        })
+        .finally(() => {
+          setPendingUpvotePostIds((current) => {
+            const next = new Set(current);
+            next.delete(postId);
+            return next;
+          });
+        });
     } catch {
       setPostActionError("Could not update upvote.");
-    } finally {
-      setTogglingPostId(null);
+      setPendingUpvotePostIds((current) => {
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
     }
   };
-
-  if (isPending) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">Space Feed</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-            Loading...
-          </h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">Space Join</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-            Sign in to join {normalizedSpaceSlug}
-          </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-            You need to authenticate before we can add your membership.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={pendingProvider !== null}
-              onClick={() => {
-                void signInWithProvider("google", normalizedSpaceSlug, setPendingProvider);
-              }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
-            >
-              {pendingProvider === "google" ? "Connecting..." : "Continue with Google"}
-            </button>
-            <button
-              type="button"
-              disabled={pendingProvider !== null}
-              onClick={() => {
-                void signInWithProvider("github", normalizedSpaceSlug, setPendingProvider);
-              }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
-            >
-              {pendingProvider === "github" ? "Connecting..." : "Continue with GitHub"}
-            </button>
-          </div>
-        </section>
-      </main>
-    );
-  }
 
   if (joinStatus === "not-found") {
     return (
@@ -343,44 +360,24 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     );
   }
 
-  if (isAccessPending && (!activeSpace || !activeMembership)) {
+  const shouldShowSpaceSkeleton =
+    isSessionChecking || isAccessPending || (!activeSpace && !canShowNotFound);
+  if (shouldShowSpaceSkeleton) {
+    return <SpaceFeedSkeleton />;
+  }
+
+  if (!activeSpace) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Feed</p>
           <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-            Loading...
+            Space not found
           </h1>
           <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-            Verifying your membership in this space.
-          </p>
-        </section>
-      </main>
-    );
-  }
-
-  if (!activeSpace || !activeMembership) {
-    return (
-      <main className="page-wrap px-4 py-12">
-        <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <p className="island-kicker mb-2">Space Join</p>
-          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-            Join {normalizedSpaceSlug}
-          </h1>
-          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-            {joinError ?? "Join this space to view and interact with its feed."}
+            No space exists for slug <code>{normalizedSpaceSlug}</code>.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={joinStatus === "joining"}
-              onClick={() => {
-                void join();
-              }}
-              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
-            >
-              {joinStatus === "joining" ? "Joining..." : "Join space"}
-            </button>
             <Link
               to={appRoutes.home}
               className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
@@ -405,12 +402,20 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
-            joined
-          </span>
-          <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
-            role: {activeMembership.role}
-          </span>
+          {activeMembership ? (
+            <>
+              <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+                joined
+              </span>
+              <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+                role: {activeMembership.role}
+              </span>
+            </>
+          ) : (
+            <span className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold uppercase">
+              public read-only
+            </span>
+          )}
         </div>
 
         {joinError ? (
@@ -425,14 +430,67 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
           </p>
         ) : null}
 
+        {!isSignedIn ? (
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            {isSessionChecking
+              ? "Checking your session..."
+              : "Sign in to join this space, create posts, comment, and upvote."}
+          </p>
+        ) : null}
+
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            to={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).to}
-            params={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).params}
-            className="inline-flex rounded-full border px-4 py-2 text-sm font-semibold text-white no-underline"
-          >
-            New post
-          </Link>
+          {isSessionChecking ? (
+            <button
+              type="button"
+              disabled
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] opacity-70"
+            >
+              Checking session...
+            </button>
+          ) : isSignedIn ? (
+            <Link
+              to={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).to}
+              params={appRoutes.newPostBySpaceSlug(normalizedSpaceSlug).params}
+              className="inline-flex rounded-full border px-4 py-2 text-sm font-semibold text-white no-underline"
+            >
+              New post
+            </Link>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={pendingProvider !== null}
+                onClick={() => {
+                  void signInWithProvider("google", normalizedSpaceSlug, setPendingProvider);
+                }}
+                className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              >
+                {pendingProvider === "google" ? "Connecting..." : "Continue with Google"}
+              </button>
+              <button
+                type="button"
+                disabled={pendingProvider !== null}
+                onClick={() => {
+                  void signInWithProvider("github", normalizedSpaceSlug, setPendingProvider);
+                }}
+                className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+              >
+                {pendingProvider === "github" ? "Connecting..." : "Continue with GitHub"}
+              </button>
+            </>
+          )}
+          {isSignedIn && !activeMembership ? (
+            <button
+              type="button"
+              disabled={joinStatus === "joining"}
+              onClick={() => {
+                void join();
+              }}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {joinStatus === "joining" ? "Joining..." : "Join space"}
+            </button>
+          ) : null}
           {canManageMembers ? (
             <Link
               to={appRoutes.membersSettingsBySlug(normalizedSpaceSlug).to}
@@ -453,12 +511,9 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
 
       <section className="mt-6 grid gap-4">
         {!postRows ? (
-          <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
-            <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">Loading posts...</h2>
-            <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
-              Syncing latest threads for this space.
-            </p>
-          </article>
+          Array.from({ length: FEED_SKELETON_CARD_COUNT }).map((_, index) => (
+            <FeedCardSkeleton key={`feed-skeleton-${index}`} />
+          ))
         ) : feed.length === 0 ? (
           <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
             <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">No posts yet</h2>
@@ -472,8 +527,8 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
               key={item.post.id}
               spaceSlug={normalizedSpaceSlug}
               item={item}
-              canEdit={item.post.authorId === session.user.id}
-              isTogglingUpvote={togglingPostId === item.post.id}
+              canEdit={Boolean(viewerUserId) && item.post.authorId === viewerUserId}
+              isTogglingUpvote={pendingUpvotePostIds.has(item.post.id)}
               onToggleUpvote={() => {
                 void onToggleUpvote(item.post.id);
               }}
@@ -516,4 +571,38 @@ async function signInWithProvider(
   } finally {
     setPendingProvider(null);
   }
+}
+
+function SpaceFeedSkeleton() {
+  return (
+    <main className="page-wrap px-4 py-12">
+      <section className="island-shell rounded-2xl p-6 sm:p-8">
+        <p className="island-kicker mb-2">Space Feed</p>
+        <div className="h-11 w-72 animate-pulse rounded-xl bg-[var(--chip-bg)]" />
+        <div className="mt-3 h-5 w-full max-w-3xl animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+        <div className="mt-6 h-8 w-40 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+      </section>
+
+      <section className="mt-6 grid gap-4">
+        {Array.from({ length: FEED_SKELETON_CARD_COUNT }).map((_, index) => (
+          <FeedCardSkeleton key={`page-skeleton-${index}`} />
+        ))}
+      </section>
+    </main>
+  );
+}
+
+function FeedCardSkeleton() {
+  return (
+    <article className="rounded-2xl border border-[var(--chip-line)] bg-[var(--island-bg)] p-5 shadow-[var(--island-shadow)]">
+      <div className="h-5 w-24 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+      <div className="mt-3 h-7 w-3/4 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+      <div className="mt-2 h-4 w-5/6 animate-pulse rounded-lg bg-[var(--chip-bg)]" />
+      <div className="mt-5 flex gap-3">
+        <div className="h-7 w-24 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+        <div className="h-7 w-28 animate-pulse rounded-full bg-[var(--chip-bg)]" />
+      </div>
+    </article>
+  );
 }

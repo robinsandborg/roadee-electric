@@ -1,15 +1,30 @@
-import { resolveScopedSpaceIdsForUserFromDb } from "#/lib/posts/repository.server";
+import {
+  resolveScopedSpaceIdsForUserFromDb,
+  resolveSpaceIdsBySlugFromDb,
+} from "#/lib/posts/repository.server";
 import { requireSessionUser, type SessionUser } from "#/lib/spaces/auth-session.server";
 
 const SCOPED_SPACE_IDS_CACHE_TTL_MS = 10_000;
 const scopedSpaceIdsCache = new Map<string, { expiresAt: number; spaceIds: string[] }>();
 
 export type ShapeScope = {
-  user: SessionUser;
+  user: SessionUser | null;
   spaceIds: string[];
 };
 
-export async function resolveShapeScope(request: Request): Promise<ShapeScope> {
+export async function resolveShapeScope(
+  request: Request,
+  options: { allowPublicBySlug?: boolean } = {},
+): Promise<ShapeScope> {
+  const spaceSlug = getSpaceSlugFromShapeRequest(request);
+  if (options.allowPublicBySlug && spaceSlug) {
+    const spaceIds = await resolveSpaceIdsBySlugFromDb({ spaceSlug });
+    return {
+      user: null,
+      spaceIds,
+    };
+  }
+
   const user = await requireSessionUser(request);
   const spaceIds = await resolveScopedSpaceIdsFromShapeRequest(request, user.id);
 

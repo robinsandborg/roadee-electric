@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/electric/shapes/post-upvotes")({
           table: "post_upvotes",
           scopeColumn: "space_id",
           columns: "id,post_id,space_id,user_id,created_at",
+          allowPublicBySlug: true,
         }),
     },
   },

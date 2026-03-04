@@ -17,7 +17,7 @@ const SESSION_CACHE_TTL_MS = 5_000;
 const sessionUserCache = new Map<string, SessionCacheEntry>();
 const sessionUserCacheKeysByUserId = new Map<string, Set<string>>();
 
-export async function requireSessionUser(request: Request): Promise<SessionUser> {
+export async function getSessionUser(request: Request): Promise<SessionUser | null> {
   const cacheKey = getSessionCacheKey(request);
   if (cacheKey) {
     const cached = readCachedSessionUser(cacheKey);
@@ -31,7 +31,7 @@ export async function requireSessionUser(request: Request): Promise<SessionUser>
   });
 
   if (!session?.user) {
-    throw new Error("Unauthorized");
+    return null;
   }
 
   const user = {
@@ -43,6 +43,15 @@ export async function requireSessionUser(request: Request): Promise<SessionUser>
 
   if (cacheKey) {
     writeCachedSessionUser(cacheKey, user);
+  }
+
+  return user;
+}
+
+export async function requireSessionUser(request: Request): Promise<SessionUser> {
+  const user = await getSessionUser(request);
+  if (!user) {
+    throw new Error("Unauthorized");
   }
 
   return user;

@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/electric/shapes/tags")({
           table: "tags",
           scopeColumn: "space_id",
           columns: "id,space_id,name,created_at",
+          allowPublicBySlug: true,
         }),
     },
   },

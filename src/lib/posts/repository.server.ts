@@ -552,6 +552,25 @@ export async function resolveScopedSpaceIdsForUserFromDb(input: {
   return result.rows.map((row) => row.id);
 }
 
+export async function resolveSpaceIdsBySlugFromDb(input: { spaceSlug: string }): Promise<string[]> {
+  const normalizedSlug = normalizeSpaceSlug(input.spaceSlug);
+  if (!normalizedSlug) {
+    return [];
+  }
+
+  const pool = getPostgresPool();
+  const result = await pool.query<{ id: string }>(
+    `
+      SELECT id
+      FROM spaces
+      WHERE slug = $1
+    `,
+    [normalizedSlug],
+  );
+
+  return result.rows.map((row) => row.id);
+}
+
 export async function listPostsShapeRowsForSpaceIdsFromDb(
   spaceIds: string[],
 ): Promise<PostsSnapshot> {

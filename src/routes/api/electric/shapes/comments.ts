@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/electric/shapes/comments")({
           table: "comments",
           scopeColumn: "space_id",
           columns: "id,post_id,space_id,author_id,body_rich_text,created_at,updated_at",
+          allowPublicBySlug: true,
         }),
     },
   },

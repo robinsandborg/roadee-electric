@@ -6,9 +6,12 @@ export async function serveScopedShapeRoute(input: {
   table: string;
   scopeColumn: string;
   columns: string;
+  allowPublicBySlug?: boolean;
 }): Promise<Response> {
   try {
-    const { spaceIds } = await resolveShapeScope(input.request);
+    const { spaceIds } = await resolveShapeScope(input.request, {
+      allowPublicBySlug: input.allowPublicBySlug,
+    });
 
     const originUrl = prepareElectricUrl(input.request);
     originUrl.searchParams.set("table", input.table);
