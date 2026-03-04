@@ -38,11 +38,13 @@ export class PostsServiceError extends Error {
 }
 
 export type PostsRepository = {
-  createPost(input: CreatePostInput): Promise<{ post: PostRecord; postTags: PostTagRecord[] }>;
+  createPost(
+    input: CreatePostInput,
+  ): Promise<{ post: PostRecord; postTags: PostTagRecord[]; txid: number }>;
   updateOwnPost(
     input: UpdateOwnPostInput,
-  ): Promise<{ post: PostRecord; postTags: PostTagRecord[] }>;
-  createComment(input: CreateCommentInput): Promise<{ comment: CommentRecord }>;
+  ): Promise<{ post: PostRecord; postTags: PostTagRecord[]; txid: number }>;
+  createComment(input: CreateCommentInput): Promise<{ comment: CommentRecord; txid: number }>;
   toggleUpvote(input: ToggleUpvoteInput): Promise<ToggleUpvoteResult>;
   listFeedBySpace(input: ListFeedBySpaceInput): Promise<{
     spaceId: string;

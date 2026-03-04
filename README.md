@@ -19,7 +19,7 @@ pnpm dev
    - `GOOGLE_CLIENT_SECRET`
    - `GITHUB_CLIENT_ID`
    - `GITHUB_CLIENT_SECRET`
-3. Optional but recommended for Postgres + Electric data backend:
+3. Required for the app data path (Electric + Postgres):
    - `DATABASE_URL` (Postgres/Neon)
    - `ELECTRIC_URL` (ElectricSQL service base URL, for example `https://api.electric-sql.cloud`)
    - `ELECTRIC_SOURCE_ID` (Electric source id)
@@ -51,7 +51,7 @@ pnpm dev
    - `/api/electric/shapes/tags`
    - `/api/electric/shapes/post-tags`
 6. Live sync behavior:
-   - the client hydrates once, then uses long-lived Electric shape streams (no interval polling when Electric is enabled).
+   - the client hydrates once, then uses long-lived Electric shape streams (no interval polling).
 
 # Building For Production
 

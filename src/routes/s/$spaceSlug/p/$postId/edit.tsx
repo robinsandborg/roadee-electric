@@ -3,14 +3,11 @@ import { and, eq, useLiveQuery } from "@tanstack/react-db";
 import { useEffect, useMemo, useState } from "react";
 import {
   categoriesCollection,
-  membershipsCollection,
   postTagsCollection,
   postsCollection,
-  spacesCollection,
   tagsCollection,
-  upsertMembership,
-  upsertSpace,
 } from "#/db-collections";
+import { useSpaceAccess } from "#/hooks/useSpaceAccess";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 import {
@@ -18,7 +15,6 @@ import {
   richTextFromPlainText,
   uploadPostImageRequest,
 } from "#/lib/posts/api-client";
-import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId/edit")({
   component: EditPostRoute,
@@ -30,8 +26,17 @@ function EditPostRoute() {
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
   const { data: session, isPending } = authClient.useSession();
 
-  const [joinStatus, setJoinStatus] = useState<"idle" | "joining" | "ready" | "not-found">("idle");
-  const [joinError, setJoinError] = useState<string | null>(null);
+  const {
+    space,
+    membership: myMembership,
+    joinStatus,
+    joinError,
+    join,
+  } = useSpaceAccess({
+    normalizedSpaceSlug,
+    userId: session?.user.id,
+    joinErrorMessage: "Could not verify your membership in this space.",
+  });
 
   const [title, setTitle] = useState("");
   const [bodyText, setBodyText] = useState("");
@@ -45,36 +50,6 @@ function EditPostRoute() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { data: spaceRows } = useLiveQuery(
-    (query) =>
-      query
-        .from({ space: spacesCollection })
-        .where(({ space }) => eq(space.slug, normalizedSpaceSlug))
-        .select(({ space }) => ({
-          ...space,
-        })),
-    [normalizedSpaceSlug],
-  );
-  const space = spaceRows?.[0];
-
-  const { data: myMembershipRows } = useLiveQuery(
-    (query) => {
-      if (!space?.id || !session?.user?.id) {
-        return undefined;
-      }
-
-      return query
-        .from({ membership: membershipsCollection })
-        .where(({ membership }) =>
-          and(eq(membership.spaceId, space.id), eq(membership.userId, session.user.id)),
-        )
-        .select(({ membership }) => ({
-          ...membership,
-        }));
-    },
-    [space?.id, session?.user?.id],
-  );
 
   const { data: postRows } = useLiveQuery(
     (query) =>
@@ -142,52 +117,7 @@ function EditPostRoute() {
   );
 
   useEffect(() => {
-    if (!session?.user?.id) {
-      return;
-    }
-
-    let cancelled = false;
-    setJoinStatus("joining");
-    setJoinError(null);
-
-    const run = async () => {
-      try {
-        const result = await joinSpaceBySlugRequest({
-          membershipId: crypto.randomUUID(),
-          spaceSlug: normalizedSpaceSlug,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        upsertSpace(result.space);
-        upsertMembership(result.membership);
-        setJoinStatus("ready");
-      } catch (unknownError) {
-        if (cancelled) {
-          return;
-        }
-
-        if (unknownError instanceof SpacesApiError && unknownError.status === 404) {
-          setJoinStatus("not-found");
-          return;
-        }
-
-        setJoinError("Could not verify your membership in this space.");
-        setJoinStatus("idle");
-      }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [normalizedSpaceSlug, session?.user?.id]);
-
-  useEffect(() => {
-    if (!post || initialized) {
+    if (!post || initialized || !postTagRows) {
       return;
     }
 
@@ -196,11 +126,9 @@ function EditPostRoute() {
     setCategoryId(post.categoryId ?? "");
     setImageUrl(post.imageUrl ?? "");
     setImageMeta(post.imageMeta ?? null);
-    setSelectedTagIds((postTagRows ?? []).map((postTag) => postTag.tagId));
+    setSelectedTagIds(postTagRows.map((postTag) => postTag.tagId));
     setInitialized(true);
   }, [initialized, post, postTagRows]);
-
-  const myMembership = myMembershipRows?.[0];
 
   const onUploadImage = async (file: File) => {
     setIsUploadingImage(true);
@@ -307,16 +235,33 @@ function EditPostRoute() {
     );
   }
 
-  if (!space || !myMembership || joinStatus !== "ready") {
+  if (!space || !myMembership) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
-            Preparing editor...
-          </h1>
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Join required</h1>
           <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
-            {joinError ?? "Checking membership and loading post data."}
+            {joinError ?? "Join this space before editing posts."}
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={joinStatus === "joining"}
+              onClick={() => {
+                void join();
+              }}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {joinStatus === "joining" ? "Joining..." : "Join space"}
+            </button>
+            <Link
+              to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
+              params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
+              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+            >
+              Back to space
+            </Link>
+          </div>
         </section>
       </main>
     );

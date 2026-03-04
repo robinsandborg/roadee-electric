@@ -1,0 +1,12 @@
+[GET] http://localhost:3000/api/electric/shapes/memberships?cursor=44186440&handle=118902942-1772618428615965&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/spaces?cursor=44186440&handle=132742379-1772618427680807&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/comments?cursor=44186440&handle=7310293-1772618428621304&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/tags?cursor=&handle=107765595-1772618429171237&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/post-tags?handle=27742647-1772618429440447&log=changes_only&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/memberships?cursor=44186440&handle=118902942-1772618428615965&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/spaces?cursor=44186440&handle=132742379-1772618427680807&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/categories?cursor=&handle=73828174-1772618428719272&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [200] 
+[GET] http://localhost:3000/api/electric/shapes/comments?cursor=44186440&handle=7310293-1772618428621304&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [FAILED] net::ERR_ABORTED
+[GET] http://localhost:3000/api/electric/shapes/post-upvotes?cursor=&handle=53314598-1772618428852607&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [200] 
+[GET] http://localhost:3000/api/electric/shapes/posts?cursor=&handle=1150218-1772618428724623&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [200] 
+[GET] http://localhost:3000/api/auth/get-session

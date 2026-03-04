@@ -27,6 +27,7 @@ export async function createPostRequest(input: {
 }): Promise<{
   post: Post;
   postTags: PostTag[];
+  txid: number;
 }> {
   return requestJson("/api/posts", {
     method: "POST",
@@ -53,6 +54,7 @@ export async function updateOwnPostRequest(input: {
 }): Promise<{
   post: Post;
   postTags: PostTag[];
+  txid: number;
 }> {
   return requestJson(`/api/posts/${encodeURIComponent(input.postId)}`, {
     method: "PATCH",
@@ -73,7 +75,7 @@ export async function createCommentRequest(input: {
   id: string;
   postId: string;
   bodyRichText: Record<string, unknown>;
-}): Promise<{ comment: Comment }> {
+}): Promise<{ comment: Comment; txid: number }> {
   return requestJson(`/api/posts/${encodeURIComponent(input.postId)}/comments`, {
     method: "POST",
     body: JSON.stringify({
@@ -86,7 +88,7 @@ export async function createCommentRequest(input: {
 export async function toggleUpvoteRequest(input: {
   id?: string;
   postId: string;
-}): Promise<{ upvoted: boolean; upvote: PostUpvote | null }> {
+}): Promise<{ upvoted: boolean; upvote: PostUpvote | null; txid: number }> {
   return requestJson(`/api/posts/${encodeURIComponent(input.postId)}/upvote`, {
     method: "POST",
     body: JSON.stringify({

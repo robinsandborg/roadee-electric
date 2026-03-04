@@ -82,7 +82,7 @@ type PostTagRow = {
 
 export async function createPostInDb(
   input: CreatePostInput,
-): Promise<{ post: PostRecord; postTags: PostTagRecord[] }> {
+): Promise<{ post: PostRecord; postTags: PostTagRecord[]; txid: number }> {
   const pool = getPostgresPool();
   const client = await pool.connect();
 
@@ -142,12 +142,14 @@ export async function createPostInDb(
       spaceId: space.id,
       tagIds,
     });
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
 
     return {
       post: mapPostRow(postResult.rows[0]!),
       postTags,
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -159,7 +161,7 @@ export async function createPostInDb(
 
 export async function updateOwnPostInDb(
   input: UpdateOwnPostInput,
-): Promise<{ post: PostRecord; postTags: PostTagRecord[] }> {
+): Promise<{ post: PostRecord; postTags: PostTagRecord[]; txid: number }> {
   const pool = getPostgresPool();
   const client = await pool.connect();
 
@@ -221,12 +223,14 @@ export async function updateOwnPostInDb(
       spaceId: existing.space_id,
       tagIds,
     });
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
 
     return {
       post: mapPostRow(updatedResult.rows[0]!),
       postTags,
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -238,7 +242,7 @@ export async function updateOwnPostInDb(
 
 export async function createCommentInDb(
   input: CreateCommentInput,
-): Promise<{ comment: CommentRecord }> {
+): Promise<{ comment: CommentRecord; txid: number }> {
   const pool = getPostgresPool();
   const client = await pool.connect();
 
@@ -277,11 +281,13 @@ export async function createCommentInDb(
         now,
       ],
     );
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
 
     return {
       comment: mapCommentRow(commentResult.rows[0]!),
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -319,10 +325,12 @@ export async function toggleUpvoteInDb(input: ToggleUpvoteInput): Promise<Toggle
     );
 
     if (deleted.rows[0]) {
+      const txid = await getCurrentTxId(client);
       await client.query("COMMIT");
       return {
         upvoted: false,
         upvote: null,
+        txid,
       };
     }
 
@@ -334,12 +342,14 @@ export async function toggleUpvoteInDb(input: ToggleUpvoteInput): Promise<Toggle
       `,
       [input.id ?? crypto.randomUUID(), input.postId, post.space_id, input.actorUserId],
     );
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
 
     return {
       upvoted: true,
       upvote: mapPostUpvoteRow(inserted.rows[0]!),
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -944,6 +954,15 @@ async function safeRollback(client: PoolClient): Promise<void> {
   } catch {
     // no-op
   }
+}
+
+async function getCurrentTxId(client: PoolClient): Promise<number> {
+  const result = await client.query<{ txid: string }>(
+    `
+      SELECT txid_current()::text AS txid
+    `,
+  );
+  return Number(result.rows[0]?.txid ?? "0");
 }
 
 function mapPostRow(row: PostRow): PostRecord {

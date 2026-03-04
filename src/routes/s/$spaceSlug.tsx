@@ -1,25 +1,19 @@
 import { Link, Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
-import { and, eq, useLiveQuery } from "@tanstack/react-db";
-import { useEffect, useMemo, useState } from "react";
+import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useMemo, useState } from "react";
 import PostCard from "#/components/posts/PostCard";
 import {
   categoriesCollection,
   commentsCollection,
-  membershipsCollection,
   postTagsCollection,
   postsCollection,
   postUpvotesCollection,
-  spacesCollection,
   tagsCollection,
-  upsertMembership,
-  upsertSpace,
-  type Membership,
-  type Space,
   type Tag,
 } from "#/db-collections";
+import { useSpaceAccess } from "#/hooks/useSpaceAccess";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
-import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug")({
   component: SpaceRoute,
@@ -42,42 +36,19 @@ function SpaceRoute() {
 function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
   const { data: session, isPending } = authClient.useSession();
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
-  const [joinStatus, setJoinStatus] = useState<"idle" | "joining" | "ready" | "not-found">("idle");
-  const [joinError, setJoinError] = useState<string | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
   const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
-  const [joinedSpace, setJoinedSpace] = useState<Space | null>(null);
-  const [joinedMembership, setJoinedMembership] = useState<Membership | null>(null);
-
-  const { data: spaceRows } = useLiveQuery(
-    (query) =>
-      query
-        .from({ space: spacesCollection })
-        .where(({ space }) => eq(space.slug, normalizedSpaceSlug))
-        .select(({ space }) => ({
-          ...space,
-        })),
-    [normalizedSpaceSlug],
-  );
-  const space = spaceRows?.[0];
-
-  const { data: myMembershipRows } = useLiveQuery(
-    (query) => {
-      if (!space?.id || !session?.user.id) {
-        return undefined;
-      }
-
-      return query
-        .from({ membership: membershipsCollection })
-        .where(({ membership }) =>
-          and(eq(membership.spaceId, space.id), eq(membership.userId, session.user.id)),
-        )
-        .select(({ membership }) => ({
-          ...membership,
-        }));
-    },
-    [space?.id, session?.user.id],
-  );
+  const {
+    space,
+    membership: myMembership,
+    joinStatus,
+    joinError,
+    join,
+  } = useSpaceAccess({
+    normalizedSpaceSlug,
+    userId: session?.user.id,
+    joinErrorMessage: "Could not join this space.",
+  });
 
   const { data: postRows } = useLiveQuery(
     (query) => {
@@ -175,9 +146,8 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     [space?.id],
   );
 
-  const myMembership = myMembershipRows?.[0];
-  const activeSpace = space ?? joinedSpace;
-  const activeMembership = myMembership ?? joinedMembership;
+  const activeSpace = space;
+  const activeMembership = myMembership;
   const canManageMembers = activeMembership?.role === "owner" || activeMembership?.role === "staff";
 
   const feed = useMemo(() => {
@@ -230,61 +200,14 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
       }));
   }, [categoryRows, commentRows, postRows, postTagRows, session?.user, tagRows, upvoteRows]);
 
-  useEffect(() => {
+  const onToggleUpvote = async (postId: string) => {
     if (!session?.user?.id) {
       return;
     }
 
-    if (activeSpace && activeMembership) {
-      setJoinStatus("ready");
-      setJoinError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setJoinStatus("joining");
-    setJoinError(null);
-
-    const run = async () => {
-      try {
-        const result = await joinSpaceBySlugRequest({
-          membershipId: crypto.randomUUID(),
-          spaceSlug: normalizedSpaceSlug,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        upsertSpace(result.space);
-        upsertMembership(result.membership);
-        setJoinedSpace(result.space);
-        setJoinedMembership(result.membership);
-        setJoinStatus("ready");
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        if (error instanceof SpacesApiError && error.status === 404) {
-          setJoinStatus("not-found");
-          return;
-        }
-
-        setJoinError("Could not join this space.");
-        setJoinStatus("idle");
-      }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeMembership, activeSpace, normalizedSpaceSlug, session?.user?.id]);
-
-  const onToggleUpvote = async (postId: string) => {
-    if (!session?.user?.id || !space?.id) {
+    const joined = await join();
+    if (!joined) {
+      setPostActionError("Join this space before upvoting.");
       return;
     }
 
@@ -305,7 +228,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             {
               id: `optimistic-upvote-${crypto.randomUUID()}`,
               postId,
-              spaceId: space.id,
+              spaceId: joined.space.id,
               userId: session.user.id,
               createdAt: new Date().toISOString(),
             },
@@ -395,17 +318,35 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     );
   }
 
-  if (!activeSpace || !activeMembership || joinStatus !== "ready") {
+  if (!activeSpace || !activeMembership) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <p className="island-kicker mb-2">Space Join</p>
           <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-            Joining {normalizedSpaceSlug}...
+            Join {normalizedSpaceSlug}
           </h1>
           <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-            {joinError ?? "Checking membership and loading space data."}
+            {joinError ?? "Join this space to view and interact with its feed."}
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={joinStatus === "joining"}
+              onClick={() => {
+                void join();
+              }}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {joinStatus === "joining" ? "Joining..." : "Join space"}
+            </button>
+            <Link
+              to={appRoutes.home}
+              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5"
+            >
+              Back to landing page
+            </Link>
+          </div>
         </section>
       </main>
     );

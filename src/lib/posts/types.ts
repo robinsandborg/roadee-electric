@@ -134,4 +134,5 @@ export type ListTaxonomyBySpaceInput = {
 export type ToggleUpvoteResult = {
   upvoted: boolean;
   upvote: PostUpvoteRecord | null;
+  txid: number;
 };

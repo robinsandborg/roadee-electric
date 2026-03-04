@@ -1,5 +1,5 @@
 import { snakeCamelMapper } from "@electric-sql/client";
-import { electricCollectionOptions, isChangeMessage } from "@tanstack/electric-db-collection";
+import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection, localOnlyCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
 import {
@@ -17,7 +17,6 @@ import {
   getPostUpvotesShapeUrl,
   getSpacesShapeUrl,
   getTagsShapeUrl,
-  isElectricShapeSyncEnabled,
 } from "#/lib/electric/client";
 import { promoteMemberToStaffRequest } from "#/lib/spaces/api-client";
 
@@ -115,9 +114,8 @@ export type Category = z.infer<typeof CategorySchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type PostTag = z.infer<typeof PostTagSchema>;
 
-const electricEnabled = typeof window !== "undefined" && isElectricShapeSyncEnabled();
+const isClient = typeof window !== "undefined";
 const electricColumnMapper = snakeCamelMapper();
-const SYNC_WAIT_TIMEOUT_MS = 12_000;
 const SERVER_MUTATION_METADATA = { source: "server" } as const;
 
 const spacesShapeUrl = getSpacesShapeUrl();
@@ -129,36 +127,57 @@ const categoriesShapeUrl = getCategoriesShapeUrl();
 const tagsShapeUrl = getTagsShapeUrl();
 const postTagsShapeUrl = getPostTagsShapeUrl();
 
-function createElectricOrLocalCollection<T extends object>(input: {
+type CollectionKey = string | number;
+type MutationEnvelope<T extends object> = {
+  metadata?: unknown;
+  original: T;
+  modified: T;
+};
+type InsertParams<T extends object> = { transaction: { mutations: Array<MutationEnvelope<T>> } };
+type UpdateParams<T extends object> = { transaction: { mutations: Array<MutationEnvelope<T>> } };
+type DeleteParams<T extends object> = { transaction: { mutations: Array<MutationEnvelope<T>> } };
+
+function createElectricCollection<T extends object>(input: {
   id: string;
   shapeUrl: string | null;
-  getKey: (item: T) => string | number;
-  onInsert?: (params: any) => Promise<void>;
-  onUpdate?: (params: any) => Promise<void>;
-  onDelete?: (params: any) => Promise<void>;
+  getKey: (item: T) => CollectionKey;
+  onInsert?: (params: InsertParams<T>) => Promise<{ txid: number | number[] } | void>;
+  onUpdate?: (params: UpdateParams<T>) => Promise<{ txid: number | number[] } | void>;
+  onDelete?: (params: DeleteParams<T>) => Promise<{ txid: number | number[] } | void>;
 }) {
-  if (electricEnabled && input.shapeUrl) {
+  if (!isClient) {
     return createCollection<T>(
-      electricCollectionOptions<any>({
+      localOnlyCollectionOptions<T>({
         id: input.id,
         getKey: input.getKey,
-        syncMode: "eager",
-        onInsert: input.onInsert,
-        onUpdate: input.onUpdate,
-        onDelete: input.onDelete,
-        shapeOptions: {
-          url: input.shapeUrl,
-          liveSse: true,
-          columnMapper: electricColumnMapper,
-        },
       }) as never,
     );
   }
 
+  const shapeUrl = requireShapeUrl(input.id, input.shapeUrl);
   return createCollection<T>(
-    localOnlyCollectionOptions<T>({
+    electricCollectionOptions<any>({
+      id: input.id,
       getKey: input.getKey,
+      syncMode: "on-demand",
+      onInsert: input.onInsert as never,
+      onUpdate: input.onUpdate as never,
+      onDelete: input.onDelete as never,
+      shapeOptions: {
+        url: shapeUrl,
+        liveSse: true,
+        columnMapper: electricColumnMapper,
+      },
     }) as never,
+  );
+}
+
+function requireShapeUrl(collectionId: string, shapeUrl: string | null): string {
+  if (shapeUrl && shapeUrl.trim().length > 0) {
+    return shapeUrl;
+  }
+  throw new Error(
+    `Missing Electric shape URL for "${collectionId}". Set VITE_ELECTRIC_SHAPE_PROXY_URL.`,
   );
 }
 
@@ -195,57 +214,39 @@ function asJsonObject(value: unknown): Record<string, unknown> {
   return {};
 }
 
-async function waitForUpsertById(collection: any, id: string): Promise<void> {
-  await collection.utils.awaitMatch((message: any) => {
-    if (!isChangeMessage(message)) {
-      return false;
+function assertServerOnlyMutation(
+  operation: string,
+  transaction: { mutations: Array<{ metadata?: unknown }> },
+): void {
+  for (const mutation of transaction.mutations) {
+    const metadata = readMutationMetadata(mutation.metadata);
+    if (!isServerMutation(metadata)) {
+      throw new Error(`Unsupported ${operation} mutation source for server-managed collection.`);
     }
-
-    if (message.headers.operation !== "insert" && message.headers.operation !== "update") {
-      return false;
-    }
-
-    const payload = message.value as Record<string, unknown> | undefined;
-    return String(payload?.id ?? message.key ?? "") === id;
-  }, SYNC_WAIT_TIMEOUT_MS);
-}
-
-async function waitForDeleteById(collection: any, id: string): Promise<void> {
-  await collection.utils.awaitMatch((message: any) => {
-    if (!isChangeMessage(message)) {
-      return false;
-    }
-
-    if (message.headers.operation !== "delete") {
-      return false;
-    }
-
-    const payload = message.value as Record<string, unknown> | undefined;
-    return String(payload?.id ?? message.key ?? "") === id;
-  }, SYNC_WAIT_TIMEOUT_MS);
-}
-
-function createServerOnlyMutationHandler(operation: string) {
-  return async ({ transaction }: any) => {
-    for (const mutation of transaction.mutations) {
-      const metadata = readMutationMetadata(mutation.metadata);
-      if (!isServerMutation(metadata)) {
-        throw new Error(`Unsupported ${operation} mutation source for server-managed collection.`);
-      }
-    }
-  };
+  }
 }
 
 const spacesHandlers = {
-  onInsert: createServerOnlyMutationHandler("space insert"),
-  onUpdate: createServerOnlyMutationHandler("space update"),
-  onDelete: createServerOnlyMutationHandler("space delete"),
+  onInsert: async ({ transaction }: InsertParams<Space>) => {
+    assertServerOnlyMutation("space insert", transaction);
+  },
+  onUpdate: async ({ transaction }: UpdateParams<Space>) => {
+    assertServerOnlyMutation("space update", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<Space>) => {
+    assertServerOnlyMutation("space delete", transaction);
+  },
 };
 
 const membershipsHandlers = {
-  onInsert: createServerOnlyMutationHandler("membership insert"),
-  onDelete: createServerOnlyMutationHandler("membership delete"),
-  onUpdate: async ({ transaction, collection }: any) => {
+  onInsert: async ({ transaction }: InsertParams<Membership>) => {
+    assertServerOnlyMutation("membership insert", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<Membership>) => {
+    assertServerOnlyMutation("membership delete", transaction);
+  },
+  onUpdate: async ({ transaction }: UpdateParams<Membership>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -262,19 +263,28 @@ const membershipsHandlers = {
         throw new Error("promote-member metadata is missing required values.");
       }
 
-      await promoteMemberToStaffRequest({
+      const result = await promoteMemberToStaffRequest({
         spaceSlug,
         targetUserId,
       });
+      txids.push(result.txid);
+    }
 
-      await waitForUpsertById(collection, asString(mutation.original.id));
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
 };
 
 const postsHandlers = {
-  onDelete: createServerOnlyMutationHandler("post delete"),
-  onInsert: async ({ transaction, collection }: any) => {
+  onDelete: async ({ transaction }: DeleteParams<Post>) => {
+    assertServerOnlyMutation("post delete", transaction);
+  },
+  onInsert: async ({ transaction }: InsertParams<Post>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -291,7 +301,7 @@ const postsHandlers = {
         throw new Error("create-post metadata is missing spaceSlug.");
       }
 
-      await createPostRequest({
+      const result = await createPostRequest({
         id: asString(post.id),
         spaceSlug,
         title: asString(post.title),
@@ -306,11 +316,17 @@ const postsHandlers = {
         tagIds: asStringArray(metadata.tagIds),
         tagNames: asStringArray(metadata.tagNames),
       });
-
-      await waitForUpsertById(collection, asString(post.id));
+      txids.push(result.txid);
+    }
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
-  onUpdate: async ({ transaction, collection }: any) => {
+  onUpdate: async ({ transaction }: UpdateParams<Post>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -322,7 +338,7 @@ const postsHandlers = {
       }
 
       const post = mutation.modified as Post;
-      await updateOwnPostRequest({
+      const result = await updateOwnPostRequest({
         postId: asString(mutation.original.id),
         title: asString(post.title),
         bodyRichText: asJsonObject(post.bodyRichText),
@@ -336,16 +352,26 @@ const postsHandlers = {
         tagIds: asStringArray(metadata.tagIds),
         tagNames: asStringArray(metadata.tagNames),
       });
-
-      await waitForUpsertById(collection, asString(mutation.original.id));
+      txids.push(result.txid);
+    }
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
 };
 
 const commentsHandlers = {
-  onUpdate: createServerOnlyMutationHandler("comment update"),
-  onDelete: createServerOnlyMutationHandler("comment delete"),
-  onInsert: async ({ transaction, collection }: any) => {
+  onUpdate: async ({ transaction }: UpdateParams<Comment>) => {
+    assertServerOnlyMutation("comment update", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<Comment>) => {
+    assertServerOnlyMutation("comment delete", transaction);
+  },
+  onInsert: async ({ transaction }: InsertParams<Comment>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -357,20 +383,28 @@ const commentsHandlers = {
       }
 
       const comment = mutation.modified as Comment;
-      await createCommentRequest({
+      const result = await createCommentRequest({
         id: asString(comment.id),
         postId: asString(comment.postId),
         bodyRichText: asJsonObject(comment.bodyRichText),
       });
-
-      await waitForUpsertById(collection, asString(comment.id));
+      txids.push(result.txid);
+    }
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
 };
 
 const postUpvotesHandlers = {
-  onUpdate: createServerOnlyMutationHandler("post upvote update"),
-  onInsert: async ({ transaction, collection }: any) => {
+  onUpdate: async ({ transaction }: UpdateParams<PostUpvote>) => {
+    assertServerOnlyMutation("post upvote update", transaction);
+  },
+  onInsert: async ({ transaction }: InsertParams<PostUpvote>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -390,11 +424,17 @@ const postUpvotesHandlers = {
       if (!result.upvoted || !result.upvote) {
         throw new Error("Server did not create the expected upvote.");
       }
-
-      await waitForUpsertById(collection, asString(result.upvote.id));
+      txids.push(result.txid);
+    }
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
-  onDelete: async ({ transaction, collection }: any) => {
+  onDelete: async ({ transaction }: DeleteParams<PostUpvote>) => {
+    const txids: number[] = [];
     for (const mutation of transaction.mutations) {
       const metadata = readMutationMetadata(mutation.metadata);
       if (isServerMutation(metadata)) {
@@ -413,28 +453,51 @@ const postUpvotesHandlers = {
       if (result.upvoted) {
         throw new Error("Server did not remove the upvote.");
       }
-
-      await waitForDeleteById(collection, asString(original.id));
+      txids.push(result.txid);
+    }
+    if (txids.length === 1) {
+      return { txid: txids[0] };
+    }
+    if (txids.length > 1) {
+      return { txid: txids };
     }
   },
 };
 
 const categoriesHandlers = {
-  onInsert: createServerOnlyMutationHandler("category insert"),
-  onUpdate: createServerOnlyMutationHandler("category update"),
-  onDelete: createServerOnlyMutationHandler("category delete"),
+  onInsert: async ({ transaction }: InsertParams<Category>) => {
+    assertServerOnlyMutation("category insert", transaction);
+  },
+  onUpdate: async ({ transaction }: UpdateParams<Category>) => {
+    assertServerOnlyMutation("category update", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<Category>) => {
+    assertServerOnlyMutation("category delete", transaction);
+  },
 };
 
 const tagsHandlers = {
-  onInsert: createServerOnlyMutationHandler("tag insert"),
-  onUpdate: createServerOnlyMutationHandler("tag update"),
-  onDelete: createServerOnlyMutationHandler("tag delete"),
+  onInsert: async ({ transaction }: InsertParams<Tag>) => {
+    assertServerOnlyMutation("tag insert", transaction);
+  },
+  onUpdate: async ({ transaction }: UpdateParams<Tag>) => {
+    assertServerOnlyMutation("tag update", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<Tag>) => {
+    assertServerOnlyMutation("tag delete", transaction);
+  },
 };
 
 const postTagsHandlers = {
-  onInsert: createServerOnlyMutationHandler("post tag insert"),
-  onUpdate: createServerOnlyMutationHandler("post tag update"),
-  onDelete: createServerOnlyMutationHandler("post tag delete"),
+  onInsert: async ({ transaction }: InsertParams<PostTag>) => {
+    assertServerOnlyMutation("post tag insert", transaction);
+  },
+  onUpdate: async ({ transaction }: UpdateParams<PostTag>) => {
+    assertServerOnlyMutation("post tag update", transaction);
+  },
+  onDelete: async ({ transaction }: DeleteParams<PostTag>) => {
+    assertServerOnlyMutation("post tag delete", transaction);
+  },
 };
 
 export const messagesCollection = createCollection(
@@ -444,56 +507,56 @@ export const messagesCollection = createCollection(
   }),
 );
 
-export const spacesCollection = createElectricOrLocalCollection<Space>({
+export const spacesCollection = createElectricCollection<Space>({
   id: "spaces",
   shapeUrl: spacesShapeUrl,
   getKey: (space) => space.id,
   ...spacesHandlers,
 });
 
-export const membershipsCollection = createElectricOrLocalCollection<Membership>({
+export const membershipsCollection = createElectricCollection<Membership>({
   id: "memberships",
   shapeUrl: membershipsShapeUrl,
   getKey: (membership) => membership.id,
   ...membershipsHandlers,
 });
 
-export const postsCollection = createElectricOrLocalCollection<Post>({
+export const postsCollection = createElectricCollection<Post>({
   id: "posts",
   shapeUrl: postsShapeUrl,
   getKey: (post) => post.id,
   ...postsHandlers,
 });
 
-export const commentsCollection = createElectricOrLocalCollection<Comment>({
+export const commentsCollection = createElectricCollection<Comment>({
   id: "comments",
   shapeUrl: commentsShapeUrl,
   getKey: (comment) => comment.id,
   ...commentsHandlers,
 });
 
-export const postUpvotesCollection = createElectricOrLocalCollection<PostUpvote>({
+export const postUpvotesCollection = createElectricCollection<PostUpvote>({
   id: "postUpvotes",
   shapeUrl: postUpvotesShapeUrl,
   getKey: (postUpvote) => postUpvote.id,
   ...postUpvotesHandlers,
 });
 
-export const categoriesCollection = createElectricOrLocalCollection<Category>({
+export const categoriesCollection = createElectricCollection<Category>({
   id: "categories",
   shapeUrl: categoriesShapeUrl,
   getKey: (category) => category.id,
   ...categoriesHandlers,
 });
 
-export const tagsCollection = createElectricOrLocalCollection<Tag>({
+export const tagsCollection = createElectricCollection<Tag>({
   id: "tags",
   shapeUrl: tagsShapeUrl,
   getKey: (tag) => tag.id,
   ...tagsHandlers,
 });
 
-export const postTagsCollection = createElectricOrLocalCollection<PostTag>({
+export const postTagsCollection = createElectricCollection<PostTag>({
   id: "postTags",
   shapeUrl: postTagsShapeUrl,
   getKey: (postTag) => postTag.id,
@@ -575,13 +638,9 @@ function upsertById<T extends object>(
   try {
     collection.insert(value, { metadata: SERVER_MUTATION_METADATA });
   } catch {
-    collection.update(
-      id,
-      { metadata: SERVER_MUTATION_METADATA },
-      (draft) => {
-        Object.assign(draft, value);
-      },
-    );
+    collection.update(id, { metadata: SERVER_MUTATION_METADATA }, (draft) => {
+      Object.assign(draft, value);
+    });
   }
 }
 

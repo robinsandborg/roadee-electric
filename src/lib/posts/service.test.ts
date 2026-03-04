@@ -18,6 +18,7 @@ function makeRepository(overrides: Partial<PostsRepository> = {}): PostsReposito
         updatedAt: new Date().toISOString(),
       },
       postTags: [],
+      txid: 1,
     }),
     updateOwnPost: async () => ({
       post: {
@@ -33,6 +34,7 @@ function makeRepository(overrides: Partial<PostsRepository> = {}): PostsReposito
         updatedAt: new Date().toISOString(),
       },
       postTags: [],
+      txid: 1,
     }),
     createComment: async () => ({
       comment: {
@@ -44,6 +46,7 @@ function makeRepository(overrides: Partial<PostsRepository> = {}): PostsReposito
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
+      txid: 1,
     }),
     toggleUpvote: async () => ({
       upvoted: true,
@@ -54,6 +57,7 @@ function makeRepository(overrides: Partial<PostsRepository> = {}): PostsReposito
         userId: "user-1",
         createdAt: new Date().toISOString(),
       },
+      txid: 1,
     }),
     listFeedBySpace: async () => ({
       spaceId: "space-1",

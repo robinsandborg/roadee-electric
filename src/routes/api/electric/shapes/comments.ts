@@ -4,6 +4,7 @@ import {
   isElectricShapeProtocolRequest,
   proxyElectricShapeRequest,
 } from "#/lib/electric/shape.server";
+import { toIsoString, toJsonObject } from "#/lib/electric/shape-row";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -98,39 +99,7 @@ function mapElectricCommentRow(row: Record<string, unknown>): CommentRecord {
     spaceId: String(row.space_id ?? ""),
     authorId: String(row.author_id ?? ""),
     bodyRichText: toJsonObject(row.body_rich_text),
-    createdAt: toISOString(row.created_at),
-    updatedAt: toISOString(row.updated_at),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
   };
-}
-
-function toJsonObject(value: unknown): Record<string, unknown> {
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      // no-op
-    }
-  }
-
-  return {};
-}
-
-function toISOString(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  const parsed = new Date(String(value ?? ""));
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-
-  return parsed.toISOString();
 }

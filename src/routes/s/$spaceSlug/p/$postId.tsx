@@ -1,27 +1,20 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { and, eq, useLiveQuery } from "@tanstack/react-db";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PostCommentList from "#/components/posts/PostCommentList";
 import PostThreadHeader from "#/components/posts/PostThreadHeader";
 import {
   categoriesCollection,
   commentsCollection,
-  membershipsCollection,
   postTagsCollection,
   postsCollection,
   postUpvotesCollection,
-  spacesCollection,
   tagsCollection,
-  upsertMembership,
-  upsertSpace,
 } from "#/db-collections";
+import { useSpaceAccess } from "#/hooks/useSpaceAccess";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
-import {
-  PostsApiError,
-  richTextFromPlainText,
-} from "#/lib/posts/api-client";
-import { joinSpaceBySlugRequest, SpacesApiError } from "#/lib/spaces/api-client";
+import { PostsApiError, richTextFromPlainText } from "#/lib/posts/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId")({
   component: PostDetailRoute,
@@ -32,42 +25,21 @@ function PostDetailRoute() {
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
   const { data: session, isPending } = authClient.useSession();
 
-  const [joinStatus, setJoinStatus] = useState<"idle" | "joining" | "ready" | "not-found">("idle");
-  const [joinError, setJoinError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [isTogglingUpvote, setIsTogglingUpvote] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const { data: spaceRows } = useLiveQuery(
-    (query) =>
-      query
-        .from({ space: spacesCollection })
-        .where(({ space }) => eq(space.slug, normalizedSpaceSlug))
-        .select(({ space }) => ({
-          ...space,
-        })),
-    [normalizedSpaceSlug],
-  );
-  const space = spaceRows?.[0];
-
-  const { data: myMembershipRows } = useLiveQuery(
-    (query) => {
-      if (!space?.id || !session?.user?.id) {
-        return undefined;
-      }
-
-      return query
-        .from({ membership: membershipsCollection })
-        .where(({ membership }) =>
-          and(eq(membership.spaceId, space.id), eq(membership.userId, session.user.id)),
-        )
-        .select(({ membership }) => ({
-          ...membership,
-        }));
-    },
-    [space?.id, session?.user?.id],
-  );
+  const {
+    space,
+    membership: myMembership,
+    joinStatus,
+    joinError,
+    join,
+  } = useSpaceAccess({
+    normalizedSpaceSlug,
+    userId: session?.user.id,
+    joinErrorMessage: "Could not verify membership for this post.",
+  });
 
   const { data: postRows } = useLiveQuery(
     (query) =>
@@ -152,8 +124,6 @@ function PostDetailRoute() {
     [postId],
   );
 
-  const myMembership = myMembershipRows?.[0];
-
   const thread = useMemo(() => {
     if (!post || !session?.user) {
       return null;
@@ -186,53 +156,14 @@ function PostDetailRoute() {
     };
   }, [categoryRows, commentsForPostRows, post, postTagRows, session?.user, tagRows, upvoteRows]);
 
-  useEffect(() => {
-    if (!session?.user?.id) {
+  const onToggleUpvote = async () => {
+    if (!session?.user?.id || !thread) {
       return;
     }
 
-    let cancelled = false;
-    setJoinStatus("joining");
-    setJoinError(null);
-
-    const run = async () => {
-      try {
-        const result = await joinSpaceBySlugRequest({
-          membershipId: crypto.randomUUID(),
-          spaceSlug: normalizedSpaceSlug,
-        });
-
-        if (cancelled) {
-          return;
-        }
-
-        upsertSpace(result.space);
-        upsertMembership(result.membership);
-        setJoinStatus("ready");
-      } catch (unknownError) {
-        if (cancelled) {
-          return;
-        }
-
-        if (unknownError instanceof SpacesApiError && unknownError.status === 404) {
-          setJoinStatus("not-found");
-          return;
-        }
-
-        setJoinError("Could not verify membership for this post.");
-        setJoinStatus("idle");
-      }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [normalizedSpaceSlug, session?.user?.id]);
-
-  const onToggleUpvote = async () => {
-    if (!session?.user?.id || !space?.id || !thread) {
+    const joined = await join();
+    if (!joined) {
+      setActionError("Join this space before upvoting.");
       return;
     }
 
@@ -250,7 +181,7 @@ function PostDetailRoute() {
             {
               id: `optimistic-upvote-${crypto.randomUUID()}`,
               postId,
-              spaceId: space.id,
+              spaceId: joined.space.id,
               userId: session.user.id,
               createdAt: new Date().toISOString(),
             },
@@ -270,7 +201,13 @@ function PostDetailRoute() {
   const onSubmitComment = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!session?.user?.id || !space?.id) {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    const joined = await join();
+    if (!joined) {
+      setActionError("Join this space before commenting.");
       return;
     }
 
@@ -293,7 +230,7 @@ function PostDetailRoute() {
         {
           id: commentId,
           postId,
-          spaceId: space.id,
+          spaceId: joined.space.id,
           authorId: session.user.id,
           bodyRichText: richTextFromPlainText(trimmed),
           createdAt: now,
@@ -359,16 +296,33 @@ function PostDetailRoute() {
     );
   }
 
-  if (!space || !myMembership || joinStatus !== "ready") {
+  if (!space || !myMembership) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
-          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
-            Preparing thread...
-          </h1>
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Join required</h1>
           <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
-            {joinError ?? "Checking membership and loading post data."}
+            {joinError ?? "Join this space to view and interact with this thread."}
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={joinStatus === "joining"}
+              onClick={() => {
+                void join();
+              }}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5 disabled:opacity-70"
+            >
+              {joinStatus === "joining" ? "Joining..." : "Join space"}
+            </button>
+            <Link
+              to={appRoutes.spaceBySlug(normalizedSpaceSlug).to}
+              params={appRoutes.spaceBySlug(normalizedSpaceSlug).params}
+              className="inline-flex rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline"
+            >
+              Back to space
+            </Link>
+          </div>
         </section>
       </main>
     );

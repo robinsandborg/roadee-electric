@@ -1,9 +1,8 @@
 /**
- * Spaces Electric hook-in point.
+ * Electric shape URL helpers for client collections.
  *
- * In local dev without Electric configured, we sync via app API polling.
- * When `VITE_ELECTRIC_SHAPE_PROXY_URL` is defined, this module exposes shape URLs
- * that can be consumed by a streaming client.
+ * App data collections are expected to sync through Electric shapes in the browser.
+ * `VITE_ELECTRIC_SHAPE_PROXY_URL` should point at the authenticated shape proxy base path.
  */
 export function getElectricShapeProxyUrl(): string | null {
   const value = import.meta.env.VITE_ELECTRIC_SHAPE_PROXY_URL;

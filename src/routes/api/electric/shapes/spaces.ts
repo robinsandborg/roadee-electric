@@ -6,6 +6,7 @@ import {
   proxyElectricShapeRequest,
   quoteSqlLiteral,
 } from "#/lib/electric/shape.server";
+import { toIsoString } from "#/lib/electric/shape-row";
 import { resolveScopedSpaceIdsForUserFromDb } from "#/lib/posts/repository.server";
 import { requireSessionUser } from "#/lib/spaces/auth-session.server";
 import { listVisibleStateForUserFromDb } from "#/lib/spaces/repository.server";
@@ -96,18 +97,7 @@ function mapElectricSpaceRow(row: Record<string, unknown>): SpaceRecord {
     name: String(row.name ?? ""),
     description: String(row.description ?? ""),
     createdBy: String(row.created_by ?? ""),
-    createdAt: toISOString(row.created_at),
-    updatedAt: toISOString(row.updated_at),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
   };
-}
-
-function toISOString(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  const parsed = new Date(String(value ?? ""));
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-  return parsed.toISOString();
 }

@@ -24,7 +24,10 @@ export const Route = createFileRoute("/api/spaces/promote")({
             targetUserId,
           });
 
-          return Response.json({ membership: result.membership }, { status: 200 });
+          return Response.json(
+            { membership: result.membership, txid: result.txid },
+            { status: 200 },
+          );
         } catch (error) {
           return mapRouteError(error);
         }

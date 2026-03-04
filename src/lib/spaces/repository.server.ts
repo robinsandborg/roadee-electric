@@ -299,6 +299,7 @@ export async function promoteMemberToStaffInDb(input: {
   targetUserId: string;
 }): Promise<{
   membership: MembershipRecord;
+  txid: number;
 }> {
   const normalizedSlug = normalizeSpaceSlug(input.spaceSlug);
   const pool = getPostgresPool();
@@ -350,10 +351,12 @@ export async function promoteMemberToStaffInDb(input: {
     if (!updateResult.rows[0]) {
       throw new SpacesServiceError("target_not_found", "Target member not found.");
     }
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
     return {
       membership: mapMembershipRow(updateResult.rows[0]),
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -462,4 +465,13 @@ async function safeRollback(client: PoolClient): Promise<void> {
   } catch {
     // no-op
   }
+}
+
+async function getCurrentTxId(client: PoolClient): Promise<number> {
+  const result = await client.query<{ txid: string }>(
+    `
+      SELECT txid_current()::text AS txid
+    `,
+  );
+  return Number(result.rows[0]?.txid ?? "0");
 }

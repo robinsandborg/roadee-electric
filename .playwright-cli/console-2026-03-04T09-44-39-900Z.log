@@ -1,0 +1,12 @@
+[     707ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ http://localhost:3000/api/electric/shapes/spaces?log=full&offset=-1:0
+[     708ms] [ERROR] An error occurred while syncing collection: spaces, 
+it has been marked as ready to avoid blocking apps waiting for '.preload()' to finish. 
+You can provide an 'onError' handler on the shapeOptions to handle this error, and this message will not be logged. FetchError: HTTP Error 401 at http://localhost:3000/api/electric/shapes/spaces?log=full&offset=-1: {"code":"unauthorized","message":"Authentication required."}
+    at _FetchError.fromResponse (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:74:12)
+    at async http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:536:21
+    at async prefetchClient (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:618:22)
+    at async http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:640:22
+    at async ShapeStream.<anonymous> (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:576:17)
+    at async ShapeStream.requestShapeLongPoll_fn (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:2726:20)
+    at async ShapeStream.requestShape_fn (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:2402:5)
+    at async ShapeStream.start_fn (http://localhost:3000/node_modules/.vite/deps/chunk-5YDY5YUF.js?v=ff30c121:2327:5) @ http://localhost:3000/node_modules/.vite/deps/@tanstack_electric-db-collection.js?v=ff30c121:1664

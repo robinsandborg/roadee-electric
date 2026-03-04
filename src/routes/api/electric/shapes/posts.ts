@@ -4,6 +4,7 @@ import {
   isElectricShapeProtocolRequest,
   proxyElectricShapeRequest,
 } from "#/lib/electric/shape.server";
+import { toIsoString, toJsonObject, toJsonObjectOrNull } from "#/lib/electric/shape-row";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -102,46 +103,7 @@ function mapElectricPostRow(row: Record<string, unknown>): PostRecord {
     imageUrl: typeof row.image_url === "string" ? row.image_url : null,
     imageMeta: toJsonObjectOrNull(row.image_meta),
     categoryId: typeof row.category_id === "string" ? row.category_id : null,
-    createdAt: toISOString(row.created_at),
-    updatedAt: toISOString(row.updated_at),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
   };
-}
-
-function toJsonObject(value: unknown): Record<string, unknown> {
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      // no-op
-    }
-  }
-
-  return {};
-}
-
-function toJsonObjectOrNull(value: unknown): Record<string, unknown> | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  return toJsonObject(value);
-}
-
-function toISOString(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  const parsed = new Date(String(value ?? ""));
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-
-  return parsed.toISOString();
 }

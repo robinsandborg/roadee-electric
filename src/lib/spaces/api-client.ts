@@ -81,6 +81,7 @@ export async function promoteMemberToStaffRequest(input: {
   targetUserId: string;
 }): Promise<{
   membership: Membership;
+  txid: number;
 }> {
   return requestJson("/api/spaces/promote", {
     method: "POST",

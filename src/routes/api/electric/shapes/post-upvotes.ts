@@ -4,6 +4,7 @@ import {
   isElectricShapeProtocolRequest,
   proxyElectricShapeRequest,
 } from "#/lib/electric/shape.server";
+import { toIsoString } from "#/lib/electric/shape-row";
 import {
   fetchFallbackSnapshot,
   isElectricShapeBackendEnabled,
@@ -97,19 +98,6 @@ function mapElectricPostUpvoteRow(row: Record<string, unknown>): PostUpvoteRecor
     postId: String(row.post_id ?? ""),
     spaceId: String(row.space_id ?? ""),
     userId: String(row.user_id ?? ""),
-    createdAt: toISOString(row.created_at),
+    createdAt: toIsoString(row.created_at),
   };
-}
-
-function toISOString(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  const parsed = new Date(String(value ?? ""));
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-
-  return parsed.toISOString();
 }

@@ -1,0 +1,49 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - heading "Roadee" [level=2] [ref=e4]:
+        - link "Roadee" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - text: Roadee
+      - generic [ref=e7]:
+        - link "Home" [ref=e8] [cursor=pointer]:
+          - /url: /
+        - link "About" [ref=e9] [cursor=pointer]:
+          - /url: /about
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e18]: P
+          - button "Sign out" [ref=e19]
+        - 'button "Theme mode: auto (system). Click to switch to light mode." [ref=e12]': Auto
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - paragraph [ref=e22]: Space Feed
+      - heading "heder" [level=1] [ref=e23]
+      - paragraph [ref=e24]: wow
+      - generic [ref=e25]:
+        - generic [ref=e26]: joined
+        - generic [ref=e27]: "role: user"
+      - generic [ref=e28]:
+        - link "New post" [ref=e29] [cursor=pointer]:
+          - /url: /s/heder/new
+        - link "Back to landing page" [ref=e30] [cursor=pointer]:
+          - /url: /
+    - article [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]: Feature request
+        - generic [ref=e35]: "#bug"
+      - heading "Make it more performant" [level=3] [ref=e36]:
+        - link "Make it more performant" [ref=e37] [cursor=pointer]:
+          - /url: /s/heder/p/6590c4c3-5b81-4830-b9b7-ce23ff085021
+      - paragraph [ref=e38]: Wow
+      - generic [ref=e39]:
+        - generic [ref=e40]: 0 comments
+        - button "Upvote (1)" [ref=e41]
+        - link "Open thread" [ref=e42] [cursor=pointer]:
+          - /url: /s/heder/p/6590c4c3-5b81-4830-b9b7-ce23ff085021
+  - contentinfo [ref=e13]:
+    - generic [ref=e14]:
+      - paragraph [ref=e15]: © 2026 Roadee. Community-led product feedback.
+      - paragraph [ref=e16]: V0 Landing
+  - button "Open TanStack Devtools" [ref=e43] [cursor=pointer]:
+    - img "TanStack Devtools" [ref=e44]

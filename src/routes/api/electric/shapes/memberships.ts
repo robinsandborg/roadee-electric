@@ -6,6 +6,7 @@ import {
   proxyElectricShapeRequest,
   quoteSqlLiteral,
 } from "#/lib/electric/shape.server";
+import { toIsoString } from "#/lib/electric/shape-row";
 import { resolveScopedSpaceIdsForUserFromDb } from "#/lib/posts/repository.server";
 import { requireSessionUser } from "#/lib/spaces/auth-session.server";
 import { listVisibleStateForUserFromDb } from "#/lib/spaces/repository.server";
@@ -97,8 +98,8 @@ function mapElectricMembershipRow(row: Record<string, unknown>): MembershipRecor
     userId: String(row.user_id ?? ""),
     role: toMembershipRole(row.role),
     title: typeof row.title === "string" ? row.title : null,
-    createdAt: toISOString(row.created_at),
-    updatedAt: toISOString(row.updated_at),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
   };
 }
 
@@ -107,15 +108,4 @@ function toMembershipRole(value: unknown): MembershipRole {
     return value;
   }
   return "user";
-}
-
-function toISOString(value: unknown): string {
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  const parsed = new Date(String(value ?? ""));
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date(0).toISOString();
-  }
-  return parsed.toISOString();
 }
