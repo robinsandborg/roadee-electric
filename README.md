@@ -9,23 +9,28 @@ pnpm install
 pnpm dev
 ```
 
+Open the app at `https://localhost:5173`.
+
 ## Local Setup
 
-1. Copy/create `.env.local`.
-2. Set auth providers:
+1. Install Caddy and trust local certificates:
+   - Install from <https://caddyserver.com/docs/install>
+   - Run `caddy trust` (may require sudo/admin)
+2. Copy/create `.env.local`.
+3. Set auth providers:
    - `BETTER_AUTH_SECRET`
-   - `BETTER_AUTH_URL` (for local dev: `http://localhost:3000`)
+   - `BETTER_AUTH_URL` (for local dev: `https://localhost:5173`)
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
    - `GITHUB_CLIENT_ID`
    - `GITHUB_CLIENT_SECRET`
-3. Required for the app data path (Electric + Postgres):
+4. Required for the app data path (Electric + Postgres):
    - `DATABASE_URL` (Postgres/Neon)
    - `ELECTRIC_URL` (ElectricSQL service base URL, for example `https://api.electric-sql.cloud`)
    - `ELECTRIC_SOURCE_ID` (Electric source id)
    - `ELECTRIC_SECRET` (server-side only)
    - `VITE_ELECTRIC_SHAPE_PROXY_URL` (shape proxy URL used by frontend clients, use `/api/electric/shapes`)
-4. Apply SQL migration(s):
+5. Apply SQL migration(s):
    - `db/migrations/001_v1_spaces_memberships.sql`
 
 ## Posts Setup Additions

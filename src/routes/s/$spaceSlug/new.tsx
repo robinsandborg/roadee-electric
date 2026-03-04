@@ -1,13 +1,22 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo, useState } from "react";
-import { categoriesCollection, postsCollection, tagsCollection } from "#/db-collections";
+import {
+  categoriesCollection,
+  postsCollection,
+  tagsCollection,
+} from "#/db-collections";
+import { requireSessionBeforeLoad } from "#/lib/auth-guard";
 import { useSpaceAccess } from "#/hooks/useSpaceAccess";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 import { richTextFromPlainText, uploadPostImageRequest } from "#/lib/posts/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/new")({
+  ssr: false,
+  beforeLoad: async () => {
+    await requireSessionBeforeLoad("/");
+  },
   component: NewPostRoute,
 });
 
@@ -15,11 +24,12 @@ function NewPostRoute() {
   const navigate = useNavigate();
   const { spaceSlug } = Route.useParams();
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const {
     space,
     membership: myMembership,
+    isAccessPending,
     joinStatus,
     joinError,
     join,
@@ -73,6 +83,7 @@ function NewPostRoute() {
     [space?.id],
   );
 
+  const isTaxonomyPending = Boolean(space?.id) && (categoryRows === undefined || tagRows === undefined);
   const tagNameSuggestions = useMemo(
     () => new Set((tagRows ?? []).map((tag) => tag.name)),
     [tagRows],
@@ -158,6 +169,19 @@ function NewPostRoute() {
     }
   };
 
+  if (isSessionPending) {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            Checking your session.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   if (!session?.user) {
     return (
       <main className="page-wrap px-4 py-12">
@@ -182,6 +206,19 @@ function NewPostRoute() {
           </h1>
           <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
             No space exists for <code>{normalizedSpaceSlug}</code>.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  if (isAccessPending && (!space || !myMembership)) {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            Verifying your membership in this space.
           </p>
         </section>
       </main>
@@ -255,6 +292,11 @@ function NewPostRoute() {
 
           <div className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
             <label htmlFor="category">Category</label>
+            {isTaxonomyPending ? (
+              <p className="m-0 text-xs font-normal text-[var(--sea-ink-soft)]">
+                Loading categories and tags...
+              </p>
+            ) : null}
             <select
               id="category"
               value={categoryId}

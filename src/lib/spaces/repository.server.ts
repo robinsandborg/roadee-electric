@@ -95,6 +95,7 @@ export async function createSpaceWithOwnerInDb(input: {
 }): Promise<{
   space: SpaceRecord;
   ownerMembership: MembershipRecord;
+  txid: number;
 }> {
   const normalizedSlug = normalizeSpaceSlug(input.slug);
   if (!isValidSpaceSlug(normalizedSlug)) {
@@ -131,12 +132,14 @@ export async function createSpaceWithOwnerInDb(input: {
       `,
       [ownerMembershipId, spaceId, input.createdBy, now],
     );
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
 
     return {
       space: mapSpaceRow(spaceResult.rows[0]!),
       ownerMembership: mapMembershipRow(ownerMembershipResult.rows[0]!),
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -157,6 +160,7 @@ export async function joinSpaceBySlugInDb(input: {
   space: SpaceRecord;
   membership: MembershipRecord;
   created: boolean;
+  txid: number | null;
 }> {
   const normalizedSlug = normalizeSpaceSlug(input.spaceSlug);
   const pool = getPostgresPool();
@@ -192,6 +196,7 @@ export async function joinSpaceBySlugInDb(input: {
         space: mapSpaceRow(spaceRow),
         membership: mapMembershipRow(existingMembershipResult.rows[0]),
         created: false,
+        txid: null,
       };
     }
 
@@ -204,12 +209,14 @@ export async function joinSpaceBySlugInDb(input: {
       `,
       [input.membershipId ?? crypto.randomUUID(), spaceRow.id, input.userId, now],
     );
+    const txid = await getCurrentTxId(client);
 
     await client.query("COMMIT");
     return {
       space: mapSpaceRow(spaceRow),
       membership: mapMembershipRow(insertMembershipResult.rows[0]!),
       created: true,
+      txid,
     };
   } catch (error) {
     await safeRollback(client);
@@ -224,6 +231,7 @@ export async function joinSpaceBySlugInDb(input: {
           space: spaceAndMembership.space,
           membership: spaceAndMembership.membership,
           created: false,
+          txid: null,
         };
       }
     }

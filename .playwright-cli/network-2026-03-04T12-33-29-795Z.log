@@ -1,0 +1,2 @@
+[GET] https://localhost:5173/api/auth/get-session => [200] 
+[GET] https://localhost:5173/api/auth/get-session => [200] 

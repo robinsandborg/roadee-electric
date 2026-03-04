@@ -1,0 +1,10 @@
+[GET] https://localhost:5173/api/auth/get-session => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?log=changes_only&offset=now&subset__params=%7B%221%22%3A%22dnb%22%7D&subset__where=%22slug%22+%3D+%241 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=68505991-1772627806536298&log=changes_only&offset=0_inf&subset__params=%7B%221%22%3A%22dnb%22%7D&subset__where=%22slug%22+%3D+%241 => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=68505991-1772627806536298&log=changes_only&offset=0_inf => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=68505991-1772627806536298&log=changes_only&offset=0_inf&subset__params=%7B%221%22%3A%22dnb%22%7D&subset__where=%22slug%22+%3D+%241 => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=68505991-1772627806536298&log=changes_only&offset=0_inf => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?cursor=&handle=68505991-1772627806536298&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=68505991-1772627806536298&log=changes_only&offset=0_inf => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?cursor=44195840&handle=68505991-1772627806536298&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?cursor=44195880&handle=68505991-1772627806536298&live=true&log=changes_only&offset=0_inf&experimental_live_sse=true&live_sse=true

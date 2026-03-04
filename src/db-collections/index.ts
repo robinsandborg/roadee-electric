@@ -114,9 +114,7 @@ export type Category = z.infer<typeof CategorySchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type PostTag = z.infer<typeof PostTagSchema>;
 
-const isClient = typeof window !== "undefined";
 const electricColumnMapper = snakeCamelMapper();
-const SERVER_MUTATION_METADATA = { source: "server" } as const;
 
 const spacesShapeUrl = getSpacesShapeUrl();
 const membershipsShapeUrl = getMembershipsShapeUrl();
@@ -140,31 +138,22 @@ type DeleteParams<T extends object> = { transaction: { mutations: Array<Mutation
 function createElectricCollection<T extends object>(input: {
   id: string;
   shapeUrl: string | null;
+  schema: z.ZodType<T>;
   getKey: (item: T) => CollectionKey;
   onInsert?: (params: InsertParams<T>) => Promise<{ txid: number | number[] } | void>;
   onUpdate?: (params: UpdateParams<T>) => Promise<{ txid: number | number[] } | void>;
   onDelete?: (params: DeleteParams<T>) => Promise<{ txid: number | number[] } | void>;
 }) {
-  if (!isClient) {
-    return createCollection<T>(
-      localOnlyCollectionOptions<T>({
-        id: input.id,
-        getKey: input.getKey,
-      }) as never,
-    );
-  }
-
-  const shapeUrl = requireShapeUrl(input.id, input.shapeUrl);
   return createCollection<T>(
     electricCollectionOptions<any>({
       id: input.id,
+      schema: input.schema,
       getKey: input.getKey,
-      syncMode: "on-demand",
       onInsert: input.onInsert as never,
       onUpdate: input.onUpdate as never,
       onDelete: input.onDelete as never,
       shapeOptions: {
-        url: shapeUrl,
+        url: requireShapeUrl(input.id, input.shapeUrl),
         liveSse: true,
         columnMapper: electricColumnMapper,
       },
@@ -509,6 +498,7 @@ export const messagesCollection = createCollection(
 
 export const spacesCollection = createElectricCollection<Space>({
   id: "spaces",
+  schema: SpaceSchema,
   shapeUrl: spacesShapeUrl,
   getKey: (space) => space.id,
   ...spacesHandlers,
@@ -516,6 +506,7 @@ export const spacesCollection = createElectricCollection<Space>({
 
 export const membershipsCollection = createElectricCollection<Membership>({
   id: "memberships",
+  schema: MembershipSchema,
   shapeUrl: membershipsShapeUrl,
   getKey: (membership) => membership.id,
   ...membershipsHandlers,
@@ -523,6 +514,7 @@ export const membershipsCollection = createElectricCollection<Membership>({
 
 export const postsCollection = createElectricCollection<Post>({
   id: "posts",
+  schema: PostSchema,
   shapeUrl: postsShapeUrl,
   getKey: (post) => post.id,
   ...postsHandlers,
@@ -530,6 +522,7 @@ export const postsCollection = createElectricCollection<Post>({
 
 export const commentsCollection = createElectricCollection<Comment>({
   id: "comments",
+  schema: CommentSchema,
   shapeUrl: commentsShapeUrl,
   getKey: (comment) => comment.id,
   ...commentsHandlers,
@@ -537,6 +530,7 @@ export const commentsCollection = createElectricCollection<Comment>({
 
 export const postUpvotesCollection = createElectricCollection<PostUpvote>({
   id: "postUpvotes",
+  schema: PostUpvoteSchema,
   shapeUrl: postUpvotesShapeUrl,
   getKey: (postUpvote) => postUpvote.id,
   ...postUpvotesHandlers,
@@ -544,6 +538,7 @@ export const postUpvotesCollection = createElectricCollection<PostUpvote>({
 
 export const categoriesCollection = createElectricCollection<Category>({
   id: "categories",
+  schema: CategorySchema,
   shapeUrl: categoriesShapeUrl,
   getKey: (category) => category.id,
   ...categoriesHandlers,
@@ -551,6 +546,7 @@ export const categoriesCollection = createElectricCollection<Category>({
 
 export const tagsCollection = createElectricCollection<Tag>({
   id: "tags",
+  schema: TagSchema,
   shapeUrl: tagsShapeUrl,
   getKey: (tag) => tag.id,
   ...tagsHandlers,
@@ -558,101 +554,8 @@ export const tagsCollection = createElectricCollection<Tag>({
 
 export const postTagsCollection = createElectricCollection<PostTag>({
   id: "postTags",
+  schema: PostTagSchema,
   shapeUrl: postTagsShapeUrl,
   getKey: (postTag) => postTag.id,
   ...postTagsHandlers,
 });
-
-export function upsertSpace(space: Space): void {
-  upsertById(spacesCollection, space.id, space);
-}
-
-export function upsertMembership(membership: Membership): void {
-  upsertById(membershipsCollection, membership.id, membership);
-}
-
-export function upsertPost(post: Post): void {
-  upsertById(postsCollection, post.id, post);
-}
-
-export function upsertComment(comment: Comment): void {
-  upsertById(commentsCollection, comment.id, comment);
-}
-
-export function upsertPostUpvote(postUpvote: PostUpvote): void {
-  upsertById(postUpvotesCollection, postUpvote.id, postUpvote);
-}
-
-export function upsertCategory(category: Category): void {
-  upsertById(categoriesCollection, category.id, category);
-}
-
-export function upsertTag(tag: Tag): void {
-  upsertById(tagsCollection, tag.id, tag);
-}
-
-export function upsertPostTag(postTag: PostTag): void {
-  upsertById(postTagsCollection, postTag.id, postTag);
-}
-
-export function removeSpace(id: string): void {
-  removeById(spacesCollection, id);
-}
-
-export function removeMembership(id: string): void {
-  removeById(membershipsCollection, id);
-}
-
-export function removePost(id: string): void {
-  removeById(postsCollection, id);
-}
-
-export function removeComment(id: string): void {
-  removeById(commentsCollection, id);
-}
-
-export function removePostUpvote(id: string): void {
-  removeById(postUpvotesCollection, id);
-}
-
-export function removeCategory(id: string): void {
-  removeById(categoriesCollection, id);
-}
-
-export function removeTag(id: string): void {
-  removeById(tagsCollection, id);
-}
-
-export function removePostTag(id: string): void {
-  removeById(postTagsCollection, id);
-}
-
-function upsertById<T extends object>(
-  collection: {
-    insert(value: T, config?: { metadata?: unknown }): void;
-    update(key: string, config: { metadata?: unknown }, updater: (draft: T) => void): void;
-  },
-  id: string,
-  value: T,
-): void {
-  try {
-    collection.insert(value, { metadata: SERVER_MUTATION_METADATA });
-  } catch {
-    collection.update(id, { metadata: SERVER_MUTATION_METADATA }, (draft) => {
-      Object.assign(draft, value);
-    });
-  }
-}
-
-function removeById(
-  collection: {
-    delete(key: string, config?: { metadata?: unknown }): void;
-  },
-  id: string,
-): void {
-  try {
-    collection.delete(id, { metadata: SERVER_MUTATION_METADATA });
-  } catch {
-    // no-op
-  }
-}

@@ -1,20 +1,20 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { and, eq, useLiveQuery } from "@tanstack/react-db";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { appRoutes } from "#/lib/routes";
+import { requireSessionBeforeLoad } from "#/lib/auth-guard";
 import { authClient } from "#/lib/auth-client";
-import {
-  fetchMembersForSpace,
-  SpacesApiError,
-} from "#/lib/spaces/api-client";
+import { SpacesApiError } from "#/lib/spaces/api-client";
 import {
   membershipsCollection,
   spacesCollection,
-  upsertMembership,
-  upsertSpace,
 } from "#/db-collections";
 
 export const Route = createFileRoute("/s/$spaceSlug/settings/members")({
+  ssr: false,
+  beforeLoad: async () => {
+    await requireSessionBeforeLoad("/");
+  },
   component: MembersSettingsRoute,
 });
 
@@ -22,19 +22,23 @@ function MembersSettingsRoute() {
   const { spaceSlug } = Route.useParams();
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
   const { data: session, isPending } = authClient.useSession();
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
 
   const { data: spaces } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!session?.user?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ space: spacesCollection })
         .where(({ space }) => eq(space.slug, normalizedSpaceSlug))
         .select(({ space }) => ({
           ...space,
-        })),
-    [normalizedSpaceSlug],
+        }));
+    },
+    [normalizedSpaceSlug, session?.user?.id],
   );
 
   const space = spaces?.[0];
@@ -86,51 +90,7 @@ function MembersSettingsRoute() {
   );
 
   const canPromote = myMembership?.role === "owner" || myMembership?.role === "staff";
-
-  useEffect(() => {
-    if (!session?.user?.id) {
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    const load = async () => {
-      try {
-        const result = await fetchMembersForSpace(normalizedSpaceSlug);
-        if (cancelled) {
-          return;
-        }
-
-        upsertSpace(result.space);
-        for (const membership of result.memberships) {
-          upsertMembership(membership);
-        }
-
-        setIsLoading(false);
-      } catch (unknownError) {
-        if (cancelled) {
-          return;
-        }
-
-        if (unknownError instanceof SpacesApiError && unknownError.status === 403) {
-          setError("You do not have access to this members page.");
-        } else if (unknownError instanceof SpacesApiError && unknownError.status === 404) {
-          setError("Space not found.");
-        } else {
-          setError("Could not load members.");
-        }
-        setIsLoading(false);
-      }
-    };
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [normalizedSpaceSlug, session?.user?.id]);
+  const isLoading = Boolean(session?.user?.id) && (spaces === undefined || memberRows === undefined);
 
   if (isPending) {
     return (

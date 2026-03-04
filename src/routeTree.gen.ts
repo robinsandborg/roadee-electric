@@ -17,6 +17,7 @@ import { Route as ApiSpacesRouteImport } from './routes/api/spaces'
 import { Route as ApiPostsRouteImport } from './routes/api/posts'
 import { Route as SSpaceSlugNewRouteImport } from './routes/s/$spaceSlug/new'
 import { Route as ApiUploadsImageRouteImport } from './routes/api/uploads/image'
+import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiSpacesPromoteRouteImport } from './routes/api/spaces/promote'
 import { Route as ApiSpacesJoinRouteImport } from './routes/api/spaces/join'
 import { Route as ApiPostsTaxonomyRouteImport } from './routes/api/posts/taxonomy'
@@ -75,6 +76,11 @@ const SSpaceSlugNewRoute = SSpaceSlugNewRouteImport.update({
 const ApiUploadsImageRoute = ApiUploadsImageRouteImport.update({
   id: '/api/uploads/image',
   path: '/api/uploads/image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpacesPromoteRoute = ApiSpacesPromoteRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
   '/api/spaces/join': typeof ApiSpacesJoinRoute
   '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/uploads/image': typeof ApiUploadsImageRoute
   '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
   '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
   '/api/spaces/join': typeof ApiSpacesJoinRoute
   '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/uploads/image': typeof ApiUploadsImageRoute
   '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
   '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/api/posts/taxonomy': typeof ApiPostsTaxonomyRoute
   '/api/spaces/join': typeof ApiSpacesJoinRoute
   '/api/spaces/promote': typeof ApiSpacesPromoteRoute
+  '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/uploads/image': typeof ApiUploadsImageRoute
   '/s/$spaceSlug/new': typeof SSpaceSlugNewRoute
   '/api/electric/shapes/categories': typeof ApiElectricShapesCategoriesRoute
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/api/posts/taxonomy'
     | '/api/spaces/join'
     | '/api/spaces/promote'
+    | '/api/trpc/$'
     | '/api/uploads/image'
     | '/s/$spaceSlug/new'
     | '/api/electric/shapes/categories'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/api/posts/taxonomy'
     | '/api/spaces/join'
     | '/api/spaces/promote'
+    | '/api/trpc/$'
     | '/api/uploads/image'
     | '/s/$spaceSlug/new'
     | '/api/electric/shapes/categories'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/api/posts/taxonomy'
     | '/api/spaces/join'
     | '/api/spaces/promote'
+    | '/api/trpc/$'
     | '/api/uploads/image'
     | '/s/$spaceSlug/new'
     | '/api/electric/shapes/categories'
@@ -366,6 +378,7 @@ export interface RootRouteChildren {
   SSpaceSlugRoute: typeof SSpaceSlugRouteWithChildren
   SpacesNewRoute: typeof SpacesNewRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUploadsImageRoute: typeof ApiUploadsImageRoute
   ApiElectricShapesCategoriesRoute: typeof ApiElectricShapesCategoriesRoute
   ApiElectricShapesCommentsRoute: typeof ApiElectricShapesCommentsRoute
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/api/uploads/image'
       fullPath: '/api/uploads/image'
       preLoaderRoute: typeof ApiUploadsImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/trpc/$': {
+      id: '/api/trpc/$'
+      path: '/api/trpc/$'
+      fullPath: '/api/trpc/$'
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/spaces/promote': {
@@ -650,6 +670,7 @@ const rootRouteChildren: RootRouteChildren = {
   SSpaceSlugRoute: SSpaceSlugRouteWithChildren,
   SpacesNewRoute: SpacesNewRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUploadsImageRoute: ApiUploadsImageRoute,
   ApiElectricShapesCategoriesRoute: ApiElectricShapesCategoriesRoute,
   ApiElectricShapesCommentsRoute: ApiElectricShapesCommentsRoute,
@@ -665,10 +686,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.tsx'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

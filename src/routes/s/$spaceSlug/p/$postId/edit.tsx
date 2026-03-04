@@ -7,6 +7,7 @@ import {
   postsCollection,
   tagsCollection,
 } from "#/db-collections";
+import { requireSessionBeforeLoad } from "#/lib/auth-guard";
 import { useSpaceAccess } from "#/hooks/useSpaceAccess";
 import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
@@ -17,6 +18,10 @@ import {
 } from "#/lib/posts/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId/edit")({
+  ssr: false,
+  beforeLoad: async () => {
+    await requireSessionBeforeLoad("/");
+  },
   component: EditPostRoute,
 });
 
@@ -24,11 +29,12 @@ function EditPostRoute() {
   const navigate = useNavigate();
   const { spaceSlug, postId } = Route.useParams();
   const normalizedSpaceSlug = spaceSlug.trim().toLowerCase();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const {
     space,
     membership: myMembership,
+    isAccessPending,
     joinStatus,
     joinError,
     join,
@@ -52,16 +58,21 @@ function EditPostRoute() {
   const [error, setError] = useState<string | null>(null);
 
   const { data: postRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ post: postsCollection })
-        .where(({ post }) => eq(post.id, postId))
+        .where(({ post }) => and(eq(post.id, postId), eq(post.spaceId, space.id)))
         .select(({ post }) => ({
           ...post,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
   );
-  const post = postRows?.find((row) => (space?.id ? row.spaceId === space.id : true));
+  const post = postRows?.[0];
 
   const { data: categoryRows } = useLiveQuery(
     (query) => {
@@ -115,6 +126,7 @@ function EditPostRoute() {
     () => new Set((tagRows ?? []).map((tag) => tag.name)),
     [tagRows],
   );
+  const isTaxonomyPending = Boolean(space?.id) && (categoryRows === undefined || tagRows === undefined);
 
   useEffect(() => {
     if (!post || initialized || !postTagRows) {
@@ -201,11 +213,14 @@ function EditPostRoute() {
     }
   };
 
-  if (isPending) {
+  if (isSessionPending) {
     return (
       <main className="page-wrap px-4 py-12">
         <section className="island-shell rounded-2xl p-6 sm:p-8">
           <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            Checking your session.
+          </p>
         </section>
       </main>
     );
@@ -230,6 +245,19 @@ function EditPostRoute() {
           <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">
             Space not found
           </h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (isAccessPending && (!space || !myMembership)) {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            Verifying your membership in this space.
+          </p>
         </section>
       </main>
     );
@@ -327,6 +355,11 @@ function EditPostRoute() {
 
           <div className="grid gap-2 text-sm font-semibold text-[var(--sea-ink)]">
             <label htmlFor="category">Category</label>
+            {isTaxonomyPending ? (
+              <p className="m-0 text-xs font-normal text-[var(--sea-ink-soft)]">
+                Loading categories and tags...
+              </p>
+            ) : null}
             <select
               id="category"
               value={categoryId}

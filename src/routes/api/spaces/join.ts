@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { invalidateScopedSpaceIdsCacheForUser } from "#/lib/posts/shape.server";
 import { requireSessionUser } from "#/lib/spaces/auth-session.server";
 import { joinSpaceBySlugInDb } from "#/lib/spaces/repository.server";
 import { SpacesServiceError } from "#/lib/spaces/service";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/api/spaces/join")({
             spaceSlug,
             userId: user.id,
           });
+          invalidateScopedSpaceIdsCacheForUser(user.id);
 
           return Response.json(result, { status: 200 });
         } catch (error) {

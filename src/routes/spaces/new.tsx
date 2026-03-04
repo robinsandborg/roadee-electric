@@ -4,9 +4,9 @@ import { appRoutes } from "#/lib/routes";
 import { authClient } from "#/lib/auth-client";
 import { isValidSpaceSlug, normalizeSpaceSlug } from "#/lib/space-slug";
 import { createSpaceRequest, SpacesApiError } from "#/lib/spaces/api-client";
-import { removeMembership, removeSpace, upsertMembership, upsertSpace } from "#/db-collections";
 
 export const Route = createFileRoute("/spaces/new")({
+  ssr: false,
   component: CreateSpaceRoute,
 });
 
@@ -109,46 +109,17 @@ function CreateSpaceRoute() {
       return;
     }
 
-    const optimisticSpaceId = crypto.randomUUID();
-    const optimisticOwnerMembershipId = crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    upsertSpace({
-      id: optimisticSpaceId,
-      slug: normalizedSlug,
-      name: trimmedName,
-      description: trimmedDescription,
-      createdBy: session.user.id,
-      createdAt: now,
-      updatedAt: now,
-    });
-    upsertMembership({
-      id: optimisticOwnerMembershipId,
-      spaceId: optimisticSpaceId,
-      userId: session.user.id,
-      role: "owner",
-      title: null,
-      createdAt: now,
-      updatedAt: now,
-    });
-
     setIsSaving(true);
     try {
-      const created = await createSpaceRequest({
-        id: optimisticSpaceId,
-        ownerMembershipId: optimisticOwnerMembershipId,
+      await createSpaceRequest({
+        id: crypto.randomUUID(),
+        ownerMembershipId: crypto.randomUUID(),
         name: trimmedName,
         slug: normalizedSlug,
         description: trimmedDescription,
       });
-
-      upsertSpace(created.space);
-      upsertMembership(created.ownerMembership);
       await navigate(appRoutes.spaceBySlug(normalizedSlug));
     } catch (unknownError) {
-      removeSpace(optimisticSpaceId);
-      removeMembership(optimisticOwnerMembershipId);
-
       if (unknownError instanceof SpacesApiError && unknownError.code === "slug_conflict") {
         const suggestion = `${normalizedSlug}-${Math.floor(Math.random() * 900 + 100)}`;
         setError("That slug is already taken.");

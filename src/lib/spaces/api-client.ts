@@ -1,4 +1,6 @@
+import { TRPCClientError } from "@trpc/client";
 import type { Membership, Space } from "#/db-collections";
+import { trpc } from "#/lib/trpc-client";
 
 export class SpacesApiError extends Error {
   status: number;
@@ -18,6 +20,7 @@ const joinRequestInFlight = new Map<
     space: Space;
     membership: Membership;
     created: boolean;
+    txid: number | null;
   }>
 >();
 
@@ -30,11 +33,13 @@ export async function createSpaceRequest(input: {
 }): Promise<{
   space: Space;
   ownerMembership: Membership;
+  txid: number;
 }> {
-  return requestJson("/api/spaces", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+  try {
+    return await trpc.spaces.create.mutate(input);
+  } catch (error) {
+    throw mapTrpcError(error);
+  }
 }
 
 export async function joinSpaceBySlugRequest(input: {
@@ -44,6 +49,7 @@ export async function joinSpaceBySlugRequest(input: {
   space: Space;
   membership: Membership;
   created: boolean;
+  txid: number | null;
 }> {
   const key = input.spaceSlug.trim().toLowerCase();
   const inFlight = joinRequestInFlight.get(key);
@@ -51,16 +57,14 @@ export async function joinSpaceBySlugRequest(input: {
     return inFlight;
   }
 
-  const request = requestJson<{
-    space: Space;
-    membership: Membership;
-    created: boolean;
-  }>("/api/spaces/join", {
-    method: "POST",
-    body: JSON.stringify(input),
-  }).finally(() => {
-    joinRequestInFlight.delete(key);
-  });
+  const request = trpc.spaces.join
+    .mutate(input)
+    .catch((error: unknown) => {
+      throw mapTrpcError(error);
+    })
+    .finally(() => {
+      joinRequestInFlight.delete(key);
+    });
 
   joinRequestInFlight.set(key, request);
   return request;
@@ -83,10 +87,11 @@ export async function promoteMemberToStaffRequest(input: {
   membership: Membership;
   txid: number;
 }> {
-  return requestJson("/api/spaces/promote", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+  try {
+    return await trpc.spaces.promote.mutate(input);
+  } catch (error) {
+    throw mapTrpcError(error);
+  }
 }
 
 async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
@@ -115,5 +120,57 @@ async function safeJson(response: Response): Promise<unknown> {
     return await response.json();
   } catch {
     return {};
+  }
+}
+
+function mapTrpcError(error: unknown): SpacesApiError {
+  if (!(error instanceof TRPCClientError)) {
+    return new SpacesApiError("Request failed", 500, "request_failed");
+  }
+
+  const data = error.data as { code?: string; httpStatus?: number } | undefined;
+  const code = normalizeTrpcCode(data?.code);
+  const status = typeof data?.httpStatus === "number" ? data.httpStatus : trpcCodeToStatus(code);
+  return new SpacesApiError(error.message, status, code);
+}
+
+function normalizeTrpcCode(code: string | undefined): string {
+  if (!code) {
+    return "request_failed";
+  }
+
+  if (code.startsWith("FORBIDDEN")) {
+    return "forbidden";
+  }
+  if (code.startsWith("UNAUTHORIZED")) {
+    return "unauthorized";
+  }
+  if (code.startsWith("NOT_FOUND")) {
+    return "not_found";
+  }
+  if (code.startsWith("CONFLICT")) {
+    return "slug_conflict";
+  }
+  if (code.startsWith("BAD_REQUEST")) {
+    return "invalid_input";
+  }
+
+  return code.toLowerCase();
+}
+
+function trpcCodeToStatus(code: string): number {
+  switch (code) {
+    case "forbidden":
+      return 403;
+    case "unauthorized":
+      return 401;
+    case "not_found":
+      return 404;
+    case "slug_conflict":
+      return 409;
+    case "invalid_input":
+      return 400;
+    default:
+      return 500;
   }
 }

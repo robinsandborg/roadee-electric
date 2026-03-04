@@ -1,0 +1,41 @@
+[GET] https://localhost:5173/api/auth/get-session => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=124596426-1772628231894818&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=124596426-1772628231894818&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/memberships?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/posts?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/comments?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/post-upvotes?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/categories?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/post-tags?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/tags?log=full&offset=-1 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/spaces?cursor=&handle=124596426-1772628231894818&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/spaces?handle=124596426-1772628231894818&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/post-upvotes?handle=11896719-1772628219240940&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/categories?handle=2678054-1772628219292490&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/comments?handle=48655317-1772628219294454&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/memberships?handle=115799092-1772628219288166&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/post-tags?handle=51070156-1772628219227266&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/posts?handle=37550762-1772628219291386&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/tags?handle=1280775-1772628219276187&log=full&offset=0_0 => [200] 
+[GET] https://localhost:5173/api/electric/shapes/categories?handle=2678054-1772628219292490&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/categories?cursor=&handle=2678054-1772628219292490&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/categories?handle=2678054-1772628219292490&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/comments?handle=48655317-1772628219294454&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/post-upvotes?handle=11896719-1772628219240940&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/comments?cursor=&handle=48655317-1772628219294454&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/comments?handle=48655317-1772628219294454&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/memberships?handle=115799092-1772628219288166&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/post-tags?handle=51070156-1772628219227266&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/posts?handle=37550762-1772628219291386&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/post-upvotes?cursor=&handle=11896719-1772628219240940&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/tags?handle=1280775-1772628219276187&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/post-upvotes?handle=11896719-1772628219240940&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/memberships?cursor=&handle=115799092-1772628219288166&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/post-tags?cursor=&handle=51070156-1772628219227266&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/memberships?handle=115799092-1772628219288166&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/posts?cursor=&handle=37550762-1772628219291386&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/tags?cursor=&handle=1280775-1772628219276187&live=true&log=full&offset=0_inf&experimental_live_sse=true&live_sse=true
+[GET] https://localhost:5173/api/electric/shapes/post-tags?handle=51070156-1772628219227266&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/posts?handle=37550762-1772628219291386&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED
+[GET] https://localhost:5173/api/electric/shapes/tags?handle=1280775-1772628219276187&log=full&offset=0_inf => [FAILED] net::ERR_ABORTED

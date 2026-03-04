@@ -3,8 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   membershipsCollection,
   spacesCollection,
-  upsertMembership,
-  upsertSpace,
   type Membership,
   type Space,
 } from "#/db-collections";
@@ -86,6 +84,10 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
   }, [input.userId, joinedMembership, space?.id]);
 
   const membership = myMembershipRows?.[0] ?? fallbackMembership;
+  const isAccessPending =
+    Boolean(input.userId) &&
+    ((!fallbackSpace && spaceRows === undefined) ||
+      (Boolean(space?.id) && !fallbackMembership && myMembershipRows === undefined));
 
   const join = async (): Promise<{ space: Space; membership: Membership } | null> => {
     if (!input.userId) {
@@ -105,8 +107,6 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
         spaceSlug: input.normalizedSpaceSlug,
       });
 
-      upsertSpace(result.space);
-      upsertMembership(result.membership);
       setJoinedSpace(result.space);
       setJoinedMembership(result.membership);
       setJoinStatus("ready");
@@ -130,6 +130,7 @@ export function useSpaceAccess(input: UseSpaceAccessInput) {
   return {
     space,
     membership,
+    isAccessPending,
     joinStatus,
     joinError,
     join,

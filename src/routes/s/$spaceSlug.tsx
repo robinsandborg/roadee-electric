@@ -1,6 +1,6 @@
 import { Link, Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import { eq, useLiveQuery } from "@tanstack/react-db";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PostCard from "#/components/posts/PostCard";
 import {
   categoriesCollection,
@@ -16,10 +16,12 @@ import { authClient } from "#/lib/auth-client";
 import { appRoutes } from "#/lib/routes";
 
 export const Route = createFileRoute("/s/$spaceSlug")({
+  ssr: false,
   component: SpaceRoute,
 });
 
 type Provider = "google" | "github";
+const INITIAL_VISIBLE_POST_COUNT = 30;
 
 function SpaceRoute() {
   const { spaceSlug } = Route.useParams();
@@ -38,9 +40,11 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
   const [postActionError, setPostActionError] = useState<string | null>(null);
   const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
+  const [visiblePostLimit, setVisiblePostLimit] = useState(INITIAL_VISIBLE_POST_COUNT);
   const {
     space,
     membership: myMembership,
+    isAccessPending,
     joinStatus,
     joinError,
     join,
@@ -64,6 +68,18 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
         }));
     },
     [space?.id],
+  );
+
+  const sortedPosts = useMemo(
+    () =>
+      [...(postRows ?? [])].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    [postRows],
+  );
+  const visiblePosts = useMemo(
+    () => sortedPosts.slice(0, visiblePostLimit),
+    [sortedPosts, visiblePostLimit],
   );
 
   const { data: commentRows } = useLiveQuery(
@@ -114,22 +130,6 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     [space?.id],
   );
 
-  const { data: tagRows } = useLiveQuery(
-    (query) => {
-      if (!space?.id) {
-        return undefined;
-      }
-
-      return query
-        .from({ tag: tagsCollection })
-        .where(({ tag }) => eq(tag.spaceId, space.id))
-        .select(({ tag }) => ({
-          ...tag,
-        }));
-    },
-    [space?.id],
-  );
-
   const { data: postTagRows } = useLiveQuery(
     (query) => {
       if (!space?.id) {
@@ -146,9 +146,29 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     [space?.id],
   );
 
+  const { data: tagRows } = useLiveQuery(
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
+        .from({ tag: tagsCollection })
+        .where(({ tag }) => eq(tag.spaceId, space.id))
+        .select(({ tag }) => ({
+          ...tag,
+        }));
+    },
+    [space?.id],
+  );
+
   const activeSpace = space;
   const activeMembership = myMembership;
   const canManageMembers = activeMembership?.role === "owner" || activeMembership?.role === "staff";
+
+  useEffect(() => {
+    setVisiblePostLimit(INITIAL_VISIBLE_POST_COUNT);
+  }, [normalizedSpaceSlug]);
 
   const feed = useMemo(() => {
     if (!session?.user || !postRows) {
@@ -158,7 +178,7 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     const categoriesById = new Map((categoryRows ?? []).map((category) => [category.id, category]));
     const tagsById = new Map((tagRows ?? []).map((tag) => [tag.id, tag]));
 
-    const postIds = new Set(postRows.map((post) => post.id));
+    const postIds = new Set(visiblePosts.map((post) => post.id));
     const postTagsByPostId = new Map<string, Tag[]>();
 
     for (const postTag of postTagRows ?? []) {
@@ -176,21 +196,25 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
 
     const commentCountByPostId = new Map<string, number>();
     for (const comment of commentRows ?? []) {
+      if (!postIds.has(comment.postId)) {
+        continue;
+      }
       commentCountByPostId.set(comment.postId, (commentCountByPostId.get(comment.postId) ?? 0) + 1);
     }
 
     const upvoteCountByPostId = new Map<string, number>();
     const hasUpvotedByPostId = new Set<string>();
     for (const upvote of upvoteRows ?? []) {
+      if (!postIds.has(upvote.postId)) {
+        continue;
+      }
       upvoteCountByPostId.set(upvote.postId, (upvoteCountByPostId.get(upvote.postId) ?? 0) + 1);
       if (upvote.userId === session.user.id) {
         hasUpvotedByPostId.add(upvote.postId);
       }
     }
 
-    return [...postRows]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map((post) => ({
+    return visiblePosts.map((post) => ({
         post,
         category: post.categoryId ? (categoriesById.get(post.categoryId) ?? null) : null,
         tags: postTagsByPostId.get(post.id) ?? [],
@@ -198,7 +222,8 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
         upvoteCount: upvoteCountByPostId.get(post.id) ?? 0,
         hasUpvoted: hasUpvotedByPostId.has(post.id),
       }));
-  }, [categoryRows, commentRows, postRows, postTagRows, session?.user, tagRows, upvoteRows]);
+  }, [categoryRows, commentRows, postRows, postTagRows, session?.user, tagRows, upvoteRows, visiblePosts]);
+  const hasMorePosts = sortedPosts.length > visiblePosts.length;
 
   const onToggleUpvote = async (postId: string) => {
     if (!session?.user?.id) {
@@ -318,6 +343,22 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
     );
   }
 
+  if (isAccessPending && (!activeSpace || !activeMembership)) {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <p className="island-kicker mb-2">Space Feed</p>
+          <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
+            Loading...
+          </h1>
+          <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
+            Verifying your membership in this space.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
   if (!activeSpace || !activeMembership) {
     return (
       <main className="page-wrap px-4 py-12">
@@ -411,7 +452,14 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
       </section>
 
       <section className="mt-6 grid gap-4">
-        {feed.length === 0 ? (
+        {!postRows ? (
+          <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
+            <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">Loading posts...</h2>
+            <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
+              Syncing latest threads for this space.
+            </p>
+          </article>
+        ) : feed.length === 0 ? (
           <article className="rounded-2xl border border-dashed border-[var(--chip-line)] bg-[var(--chip-bg)] p-6">
             <h2 className="m-0 text-xl font-bold text-[var(--sea-ink)]">No posts yet</h2>
             <p className="m-0 mt-2 text-sm leading-6 text-[var(--sea-ink-soft)]">
@@ -432,6 +480,17 @@ function SpaceFeed({ normalizedSpaceSlug }: { normalizedSpaceSlug: string }) {
             />
           ))
         )}
+        {hasMorePosts ? (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setVisiblePostLimit((current) => current + INITIAL_VISIBLE_POST_COUNT)}
+              className="rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:-translate-y-0.5"
+            >
+              Load more
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   );

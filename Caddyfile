@@ -1,0 +1,8 @@
+localhost:5173 {
+  reverse_proxy localhost:3000 {
+    flush_interval -1
+  }
+  encode {
+    gzip
+  }
+}

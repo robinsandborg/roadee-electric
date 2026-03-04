@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { and, eq, useLiveQuery } from "@tanstack/react-db";
+import { and, eq, inArray, useLiveQuery } from "@tanstack/react-db";
 import { useMemo, useState } from "react";
 import PostCommentList from "#/components/posts/PostCommentList";
 import PostThreadHeader from "#/components/posts/PostThreadHeader";
@@ -17,6 +17,7 @@ import { appRoutes } from "#/lib/routes";
 import { PostsApiError, richTextFromPlainText } from "#/lib/posts/api-client";
 
 export const Route = createFileRoute("/s/$spaceSlug/p/$postId")({
+  ssr: false,
   component: PostDetailRoute,
 });
 
@@ -32,6 +33,7 @@ function PostDetailRoute() {
   const {
     space,
     membership: myMembership,
+    isAccessPending,
     joinStatus,
     joinError,
     join,
@@ -42,59 +44,52 @@ function PostDetailRoute() {
   });
 
   const { data: postRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ post: postsCollection })
-        .where(({ post }) => eq(post.id, postId))
+        .where(({ post }) => and(eq(post.id, postId), eq(post.spaceId, space.id)))
         .select(({ post }) => ({
           ...post,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
   );
-
-  const post = postRows?.find((row) => (space?.id ? row.spaceId === space.id : true));
+  const post = postRows?.[0];
 
   const { data: commentsForPostRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ comment: commentsCollection })
-        .where(({ comment }) => eq(comment.postId, postId))
+        .where(({ comment }) => and(eq(comment.postId, postId), eq(comment.spaceId, space.id)))
         .select(({ comment }) => ({
           ...comment,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
   );
 
   const { data: categoryRows } = useLiveQuery(
     (query) => {
-      if (!space?.id) {
+      if (!post?.categoryId) {
         return undefined;
       }
 
       return query
         .from({ category: categoriesCollection })
-        .where(({ category }) => eq(category.spaceId, space.id))
+        .where(({ category }) => eq(category.id, post.categoryId))
         .select(({ category }) => ({
           ...category,
         }));
     },
-    [space?.id],
-  );
-
-  const { data: tagRows } = useLiveQuery(
-    (query) => {
-      if (!space?.id) {
-        return undefined;
-      }
-
-      return query
-        .from({ tag: tagsCollection })
-        .where(({ tag }) => eq(tag.spaceId, space.id))
-        .select(({ tag }) => ({
-          ...tag,
-        }));
-    },
-    [space?.id],
+    [post?.categoryId],
   );
 
   const { data: postTagRows } = useLiveQuery(
@@ -113,15 +108,44 @@ function PostDetailRoute() {
     [postId, space?.id],
   );
 
+  const visibleTagIds = useMemo(
+    () => Array.from(new Set((postTagRows ?? []).map((postTag) => postTag.tagId))),
+    [postTagRows],
+  );
+  const visibleTagIdsKey = useMemo(() => visibleTagIds.join(","), [visibleTagIds]);
+
   const { data: upvoteRows } = useLiveQuery(
-    (query) =>
-      query
+    (query) => {
+      if (!space?.id) {
+        return undefined;
+      }
+
+      return query
         .from({ postUpvote: postUpvotesCollection })
-        .where(({ postUpvote }) => eq(postUpvote.postId, postId))
+        .where(({ postUpvote }) =>
+          and(eq(postUpvote.postId, postId), eq(postUpvote.spaceId, space.id)),
+        )
         .select(({ postUpvote }) => ({
           ...postUpvote,
-        })),
-    [postId],
+        }));
+    },
+    [postId, space?.id],
+  );
+
+  const { data: tagRows } = useLiveQuery(
+    (query) => {
+      if (visibleTagIds.length === 0) {
+        return undefined;
+      }
+
+      return query
+        .from({ tag: tagsCollection })
+        .where(({ tag }) => inArray(tag.id, visibleTagIds))
+        .select(({ tag }) => ({
+          ...tag,
+        }));
+    },
+    [visibleTagIdsKey],
   );
 
   const thread = useMemo(() => {
@@ -290,6 +314,19 @@ function PostDetailRoute() {
           </h1>
           <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
             No space exists for <code>{normalizedSpaceSlug}</code>.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  if (isAccessPending && (!space || !myMembership)) {
+    return (
+      <main className="page-wrap px-4 py-12">
+        <section className="island-shell rounded-2xl p-6 sm:p-8">
+          <h1 className="display-title text-4xl font-bold text-[var(--sea-ink)]">Loading...</h1>
+          <p className="m-0 mt-2 text-sm text-[var(--sea-ink-soft)]">
+            Verifying your membership in this space.
           </p>
         </section>
       </main>

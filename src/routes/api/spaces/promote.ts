@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { invalidateScopedSpaceIdsCacheForUser } from "#/lib/posts/shape.server";
 import { requireSessionUser } from "#/lib/spaces/auth-session.server";
 import { promoteMemberToStaffInDb } from "#/lib/spaces/repository.server";
 import { SpacesServiceError } from "#/lib/spaces/service";
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/api/spaces/promote")({
             actorUserId: user.id,
             targetUserId,
           });
+          invalidateScopedSpaceIdsCacheForUser(user.id);
+          invalidateScopedSpaceIdsCacheForUser(targetUserId);
 
           return Response.json(
             { membership: result.membership, txid: result.txid },

@@ -1,132 +1,126 @@
-import {
-  fetchElectricShapeRows,
-  isElectricCloudConfigured,
-  quoteSqlLiteral,
-} from "#/lib/electric/shape.server";
-import { getPostgresPool } from "#/lib/postgres.server";
-import {
-  listPostsShapeRowsForSpaceIdsFromDb,
-  resolveScopedSpaceIdsForUserFromDb,
-} from "#/lib/posts/repository.server";
-import type { PostsSnapshot } from "#/lib/posts/types";
+import { resolveScopedSpaceIdsForUserFromDb } from "#/lib/posts/repository.server";
+import { requireSessionUser, type SessionUser } from "#/lib/spaces/auth-session.server";
 
-const POSTS_REQUIRED_TABLES = [
-  "posts",
-  "comments",
-  "post_upvotes",
-  "categories",
-  "tags",
-  "post_tags",
-] as const;
+const SCOPED_SPACE_IDS_CACHE_TTL_MS = 10_000;
+const scopedSpaceIdsCache = new Map<string, { expiresAt: number; spaceIds: string[] }>();
 
-let postsSchemaCache: { checkedAt: number; available: boolean } | null = null;
-const POSTS_SCHEMA_CACHE_TTL_MS = 30_000;
+export type ShapeScope = {
+  user: SessionUser;
+  spaceIds: string[];
+};
+
+export async function resolveShapeScope(request: Request): Promise<ShapeScope> {
+  const user = await requireSessionUser(request);
+  const spaceIds = await resolveScopedSpaceIdsFromShapeRequest(request, user.id);
+
+  return {
+    user,
+    spaceIds,
+  };
+}
 
 export async function resolveScopedSpaceIdsFromShapeRequest(
   request: Request,
   userId: string,
 ): Promise<string[]> {
-  const url = new URL(request.url);
-  const spaceSlug = url.searchParams.get("spaceSlug")?.trim() || undefined;
-  return resolveScopedSpaceIdsForUserFromDb({ userId, spaceSlug });
+  const spaceSlug = getSpaceSlugFromShapeRequest(request);
+  const cacheKey = getScopedSpaceIdsCacheKey(userId, spaceSlug);
+  const cached = readScopedSpaceIdsCache(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const resolved = await resolveScopedSpaceIdsForUserFromDb({ userId, spaceSlug });
+  writeScopedSpaceIdsCache(cacheKey, resolved);
+  return resolved;
 }
 
-export async function fetchShapeRowsBySpaceIds(input: {
-  table: string;
-  spaceIds: string[];
-  where?: string;
-}): Promise<Record<string, unknown>[]> {
-  if (input.spaceIds.length === 0) {
-    return [];
+export function buildScopedWhere(column: string, spaceIds: string[]): string {
+  if (spaceIds.length === 0) {
+    return "1 = 0";
   }
-
-  if (!isElectricCloudConfigured()) {
-    return [];
-  }
-
-  const where = input.where ?? `space_id IN (${input.spaceIds.map(quoteSqlLiteral).join(",")})`;
-
-  return fetchElectricShapeRows({
-    table: input.table,
-    where,
-  });
-}
-
-export async function fetchFallbackSnapshot(spaceIds: string[]): Promise<PostsSnapshot> {
-  const hasPostsSchema = await isPostsSchemaAvailable();
-  if (!hasPostsSchema) {
-    return emptyPostsSnapshot();
-  }
-
-  try {
-    return await listPostsShapeRowsForSpaceIdsFromDb(spaceIds);
-  } catch (error) {
-    if (isUndefinedTableError(error)) {
-      return emptyPostsSnapshot();
-    }
-    throw error;
-  }
-}
-
-export function shapeWhereBySpaceIds(column: string, spaceIds: string[]): string {
   return `${column} IN (${spaceIds.map(quoteSqlLiteral).join(",")})`;
 }
 
-export function isElectricShapeBackendEnabled(): boolean {
-  return isElectricCloudConfigured();
+export function invalidateScopedSpaceIdsCacheForUser(userId: string): void {
+  const prefix = `${userId}:`;
+  for (const key of scopedSpaceIdsCache.keys()) {
+    if (key.startsWith(prefix)) {
+      scopedSpaceIdsCache.delete(key);
+    }
+  }
 }
 
-export async function isPostsSchemaAvailable(): Promise<boolean> {
-  const now = Date.now();
-  if (postsSchemaCache && now - postsSchemaCache.checkedAt < POSTS_SCHEMA_CACHE_TTL_MS) {
-    return postsSchemaCache.available;
+export function quoteSqlLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+function getSpaceSlugFromShapeRequest(request: Request): string | undefined {
+  const url = new URL(request.url);
+  const explicitSpaceSlug = normalizeSpaceSlug(url.searchParams.get("spaceSlug"));
+  if (explicitSpaceSlug) {
+    return explicitSpaceSlug;
+  }
+
+  const refererHeader = request.headers.get("referer");
+  if (!refererHeader) {
+    return undefined;
   }
 
   try {
-    const pool = getPostgresPool();
-    const result = await pool.query<{ table_name: string }>(
-      `
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-          AND table_name = ANY($1::text[])
-      `,
-      [POSTS_REQUIRED_TABLES],
-    );
-
-    const available =
-      result.rows.length === POSTS_REQUIRED_TABLES.length &&
-      POSTS_REQUIRED_TABLES.every((table) => result.rows.some((row) => row.table_name === table));
-
-    postsSchemaCache = { checkedAt: now, available };
-    return available;
+    const refererUrl = new URL(refererHeader);
+    if (refererUrl.origin !== url.origin) {
+      return undefined;
+    }
+    return getSpaceSlugFromPathname(refererUrl.pathname);
   } catch {
-    postsSchemaCache = { checkedAt: now, available: false };
-    return false;
+    return undefined;
   }
 }
 
-function emptyPostsSnapshot(): PostsSnapshot {
-  return {
-    posts: [],
-    comments: [],
-    postUpvotes: [],
-    categories: [],
-    tags: [],
-    postTags: [],
-  };
+function getSpaceSlugFromPathname(pathname: string): string | undefined {
+  const segments = pathname
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+  if (segments[0] !== "s" || !segments[1]) {
+    return undefined;
+  }
+
+  try {
+    return normalizeSpaceSlug(decodeURIComponent(segments[1]));
+  } catch {
+    return normalizeSpaceSlug(segments[1]);
+  }
 }
 
-function isUndefinedTableError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) {
-    return false;
+function normalizeSpaceSlug(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+function getScopedSpaceIdsCacheKey(userId: string, spaceSlug: string | undefined): string {
+  return `${userId}:${spaceSlug ?? "*"}`;
+}
+
+function readScopedSpaceIdsCache(cacheKey: string): string[] | null {
+  const cached = scopedSpaceIdsCache.get(cacheKey);
+  if (!cached) {
+    return null;
   }
 
-  const code = (error as { code?: unknown }).code;
-  if (code === "42P01") {
-    return true;
+  if (cached.expiresAt <= Date.now()) {
+    scopedSpaceIdsCache.delete(cacheKey);
+    return null;
   }
 
-  const message = (error as { message?: unknown }).message;
-  return typeof message === "string" && message.toLowerCase().includes("does not exist");
+  return cached.spaceIds;
+}
+
+function writeScopedSpaceIdsCache(cacheKey: string, spaceIds: string[]): void {
+  scopedSpaceIdsCache.set(cacheKey, {
+    expiresAt: Date.now() + SCOPED_SPACE_IDS_CACHE_TTL_MS,
+    spaceIds,
+  });
 }
